@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+  <title>E-Learning SMP - Forum Diskusi</title>
+</head>
+<body>
+  <header class="headerBox">
+    <div class="headerTitle">
+      <h1>E-Learning SMP</h1>
+      <p>Forum Diskusi</p>
+    </div>
+    <div class="headerProfile">
+      <img src="assets/profile.png" class="thumb">
+    </div>
+  </header>
+
+  <nav>
+    <a href="index.html">Dashboard</a>
+    <a href="materi.html">Materi</a>
+    <a href="kuis.html">Kuis</a>
+    <a href="forum.html" class="select">Forum</a>
+    <a href="profil.html">Profil</a>
+  </nav>
+
+  <div class="container">
+    <div class="card">
+      <h2>💬 Diskusi Terbaru</h2>
+
+      <!-- Post 1 -->
+      <div class="post">
+        <h3>Bagaimana cara menyelesaikan persamaan 3x + 5 = 20?</h3>
+        <p class="meta">Dikirim oleh <b>Andi</b> • 18 Sept 2025</p>
+        <div class="reply">
+          <p><b>Guru Matematika:</b> Kurangkan 5 dari kedua sisi → 3x = 15, lalu bagi 3 → x = 5.</p>
+        </div>
+        <div class="reply">
+          <p><b>Citra:</b> Sama, aku dapat jawabannya x = 5 juga 👍</p>
+        </div>
+      </div>
+
+      <!-- Post 2 -->
+      <div class="post">
+        <h3>Ada video pembahasan sistem peredaran darah?</h3>
+        <p class="meta">Dikirim oleh <b>Budi</b> • 19 Sept 2025</p>
+        <div class="reply">
+          <p><b>Guru IPA:</b> Silakan cek di bagian Materi → IPA, sudah ada video yang diunggah.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Form diskusi baru -->
+    <div class="card form-box">
+      <h2>Tulis Diskusi Baru</h2>
+      <form>
+        <textarea rows="4" placeholder="Tulis pertanyaan atau diskusi di sini..."></textarea>
+        <button type="submit" class="btn">Kirim</button>
+      </form>
+    </div>
+  </div>
+
+  <footer>
+    &copy; 2025 E-Learning SMP | Dikembangkan oleh Tim
+  </footer>
+
+  <script src="dataSiswa.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
