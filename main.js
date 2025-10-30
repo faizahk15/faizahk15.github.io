@@ -27,7 +27,6 @@ function initLogin() {
         }
     });
 }
-
 // Login message
 window.addEventListener('DOMContentLoaded', () => {
     const user = JSON.parse(localStorage.getItem('loggedInUser'));

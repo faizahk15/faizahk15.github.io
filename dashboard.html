@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+  <title>E-Learning SMP</title>
+</head>
+
+<body>
+  <header class="headerBox">
+    <div class="headerTitle">
+      <h1>E-Learning SMP</h1>
+      <p id="welcome-msg"></p>
+    </div>
+    <div class="headerProfile">
+      <img src="assets/profile.png" class="thumb">
+    </div>
+  </header>
+
+  <nav>
+    <a href="dashboard.html" class="select">Dashboard</a>
+    <a href="materi.html">Materi</a>
+    <a href="kuis.html">Kuis</a>
+    <a href="forum.html">Forum</a>
+    <a href="profil.html">Profil</a>
+  </nav>
+
+  <div class="container">
+    <div class="card">
+      <h2>🏆 Papan Peringkat</h2>
+      <p>Peringkat siswa berdasarkan nilai total dari kuis & tugas.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Peringkat</th>
+            <th>Nama Siswa</th>
+            <th>Kelas</th>
+            <th>Nilai Total</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboard-body">
+          <!-- leaderboard rows injected here -->
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>Progress Belajar</h2>
+      <div class="progress-bar">
+        <div class="progress"></div>
+      </div>
+      <p>60% selesai</p>
+    </div>
+
+    <div class="card">
+      <h2>Materi Terbaru</h2>
+      <ul>
+        <li><a href="#">Matematika: Persamaan Linear</a></li>
+        <li><a href="#">IPA: Sistem Peredaran Darah</a></li>
+        <li><a href="#">Bahasa Inggris: Simple Past Tense</a></li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>Kuis Aktif</h2>
+      <p><a href="#">Kuis Matematika Bab 2</a> - Deadline: 21 Sept 2025</p>
+    </div>
+  </div>
+
+  <footer>
+    &copy; 2025 E-Learning SMP | Dikembangkan oleh Tim
+  </footer>
+
+  <script src="dataSiswa.js"></script>
+  <script src="main.js"></script>
+</body>
+
+</html>
