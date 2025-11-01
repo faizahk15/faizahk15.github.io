@@ -34,42 +34,55 @@ body {
   background: var(--colorMain);
   color: var(--colorBlack);
 }
+
 header {
   background: var(--colorAcc);
   color: var(--colorWhite);
   padding: 15px;
   text-align: center;
+  display: flex;
+  justify-content: space-evenly;
 }
+
 nav {
   display: flex;
   justify-content: center;
   background: var(--colorAcc2);
 }
+
 nav a {
   color: var(--colorWhite);
   padding: 12px 20px;
   text-decoration: none;
   transition: background 0.1s ease, transform 0.1s ease, padding 0.1s ease;
 }
+
 nav a:hover {
   background: var(--colorAcc2Hov);
   transform: scale(1.1);
 }
+
 nav .select {
   background: var(--colorAcc2Sel);
   transform: scale(1.1);
 }
+
 footer {
   background: var(--colorAcc2);
   color: var(--colorWhite);
   text-align: center;
   padding: 10px;
   position: fixed;
-  bottom: 0; left: 0; right: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
 }
 
 
-h1, h2, h3, h4 {
+h1,
+h2,
+h3,
+h4 {
   margin-top: 10px;
   margin-bottom: 10px;
 }
@@ -80,31 +93,37 @@ h1, h2, h3, h4 {
   margin: 0 auto;
   padding: 20px;
 }
+
 .card {
   background: var(--colorWhite);
   border-radius: 10px;
   padding: 20px;
   margin: 15px 0;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
+
 .card.subject {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
-.card a{
+
+.card a {
   color: var(--colorAcc);
   font-weight: bold;
 }
+
 .content {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
 }
+
 .content a {
   color: var(--colorWhite);
   font-weight: normal;
 }
+
 .thumb {
   width: 100px;
   height: 100px;
@@ -112,8 +131,16 @@ h1, h2, h3, h4 {
   border-radius: 8px;
   transition: background 0.1s ease, transform 0.1s ease, padding 0.1s ease;
 }
+
 .thumb:hover {
   transform: scale(1.1);
+}
+
+
+.headerSpacer {
+  width: 100px;
+  height: 100px;
+  border-radius: 8px;
 }
 
 
@@ -123,6 +150,7 @@ h1, h2, h3, h4 {
   overflow: hidden;
   margin-top: 10px;
 }
+
 .progress {
   height: 15px;
   width: 60%;
@@ -134,36 +162,70 @@ table {
   width: 100%;
   border-collapse: collapse;
 }
+
 tr {
   transition: background 0.1s ease, transform 0.1s ease, padding 0.1s ease;
 }
+
 tr:hover {
-  transform: scale(1.05);
+  opacity: 0.9;
 }
-th, td {
+
+th,
+td {
   padding: 12px;
   text-align: center;
   border-bottom: 1px solid #ddd;
 }
+
 th {
   background: var(--colorAcc);
   color: var(--colorWhite);
 }
+
 tr:nth-child(odd) {
   background: var(--colorWhite2);
 }
+
 .rank-1 {
   background: var(--colorRank1) !important;
   font-weight: bold;
 }
+
 .rank-2 {
   background: var(--colorRank2) !important;
   font-weight: bold;
 }
+
 .rank-3 {
   background: var(--colorRank3) !important;
   font-weight: bold;
 }
+
+/* === RESPONSIVE TABLE FIX === */
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  /* smooth scroll on mobile */
+}
+
+.table-wrapper table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 400px;
+  /* prevent cells from squashing too much */
+}
+
+::-webkit-scrollbar {
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--colorAccLight);
+  border-radius: 4px;
+}
+
 
 
 .card h3 {
@@ -175,17 +237,21 @@ tr:nth-child(odd) {
   border-bottom: 1px solid var(--colorAccLight);
   padding: 10px 0;
 }
+
 .post:last-child {
   border-bottom: none;
 }
+
 .post h3 {
   margin: 0;
   font-size: 100%;
 }
+
 .meta {
   font-size: 80%;
   color: var(--colorAcc);
 }
+
 .reply {
   margin-left: 20px;
   background: var(--colorWhite2);
@@ -194,10 +260,14 @@ tr:nth-child(odd) {
   margin-top: 8px;
   border-radius: 5px;
 }
+
 .form-box {
   margin-top: 20px;
 }
-textarea, input[type=text], input[type=password] {
+
+textarea,
+input[type=text],
+input[type=password] {
   display: block;
   box-sizing: border-box;
   width: 100%;
@@ -207,16 +277,21 @@ textarea, input[type=text], input[type=password] {
   border: 1px solid var(--colorAcc);
   resize: vertical;
 }
-textarea::placeholder, input[type=text]::placeholder, input[type=password]::placeholder {
+
+textarea::placeholder,
+input[type=text]::placeholder,
+input[type=password]::placeholder {
   color: var(--colorAcc);
   font-family: Author, sans-serif;
   font-size: 120%;
 }
+
 input:focus {
   outline: none;
   border-color: var(--colorAcc2);
   box-shadow: 0 0 5px var(--colorAccLight);
 }
+
 .form-box a {
   color: var(--colorWhite);
 }
@@ -226,6 +301,7 @@ input:focus {
 button {
   border: none;
 }
+
 .btn {
   display: inline-block;
   background: var(--colorAcc);
@@ -237,9 +313,14 @@ button {
   align-self: flex-start;
   transition: background 0.1s ease, transform 0.1s ease, padding 0.1s ease;
 }
+
 .btn:hover {
   background: var(--colorAcc2Hov);
   transform: scale(1.1);
+}
+
+.card a.btn {
+  color: var(--colorWhite);
 }
 
 
@@ -248,8 +329,99 @@ button {
   border-radius: 10px;
   overflow: hidden;
 }
+
 iframe {
   width: 100%;
   height: 315px;
   border: none;
+}
+
+
+/* === UNIVERSAL MENU BUTTON === */
+.headerBox {
+  display: flex;
+  align-items: center;
+}
+
+.menu-toggle {
+  position: static;
+  /* disable absolute positioning */
+  display: none;
+  background: var(--colorAcc);
+  color: var(--colorWhite);
+  border: none;
+  font-size: 1.5em;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+/* === MOBILE SIDEBAR BEHAVIOR === */
+@media (max-width: 500px) {
+  .headerBox {
+    justify-content: space-between;
+    padding: 5px;
+  }
+
+  .headerProfile .thumb {
+    width: 60px;
+    height: 60px;
+  }
+
+  .headerSpacer {
+    display: none;
+  }
+
+  .menu-toggle {
+    display: block;
+  }
+
+  /* Convert top nav to hidden sidebar */
+  nav {
+    position: fixed;
+    top: 0;
+    left: -250px;
+    width: 220px;
+    height: 100%;
+    background: var(--colorAcc2);
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    padding-top: 70px;
+    transition: left 0.3s ease;
+    z-index: 1000;
+  }
+
+  nav a {
+    display: block;
+    text-align: left;
+    padding: 15px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--colorWhite);
+  }
+
+  nav a:hover {
+    background: var(--colorAcc2Hov);
+  }
+
+  nav.open {
+    left: 0;
+  }
+
+  /* Optional overlay background when sidebar is open */
+  .overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(2px);
+    z-index: 999;
+    display: none;
+  }
+
+  .overlay.show {
+    display: block;
+  }
 }

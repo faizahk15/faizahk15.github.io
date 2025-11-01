@@ -10,6 +10,8 @@
 
 <body>
   <header class="headerBox">
+    <button id="menu-toggle" class="menu-toggle">☰</button>
+    <div class="headerSpacer"></div>
     <div class="headerTitle">
       <h1>E-Learning SMP</h1>
       <p id="welcome-msg"></p>
@@ -19,7 +21,7 @@
     </div>
   </header>
 
-  <nav>
+  <nav id="nav-bar">
     <a href="dashboard.html" class="select">Dashboard</a>
     <a href="materi.html">Materi</a>
     <a href="kuis.html">Kuis</a>
@@ -32,6 +34,7 @@
       <h2>🏆 Papan Peringkat</h2>
       <p>Peringkat siswa berdasarkan nilai total dari kuis & tugas.</p>
 
+      <div class="table-wrapper">
       <table>
         <thead>
           <tr>
@@ -45,6 +48,7 @@
           <!-- leaderboard rows injected here -->
         </tbody>
       </table>
+      </div>
     </div>
 
     <div class="card">

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+  <title>Detail Materi</title>
+</head>
+<body>
+  <header class="headerBox">
+    <button id="menu-toggle" class="menu-toggle">☰</button>
+    <div class="headerTitle">
+      <h1>E-Learning SMP</h1>
+      <p id="quiz-title">Memuat...</p>
+    </div>
+    <div class="headerProfile">
+      <img src="assets/profile.png" class="thumb">
+    </div>
+  </header>
+
+  <nav id="nav-bar">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="materi.html">Materi</a>
+    <a href="kuis.html" class="select">Kuis</a>
+    <a href="forum.html">Forum</a>
+    <a href="profil.html">Profil</a>
+  </nav>
+
+  <div class="container">
+    <div class="card" id="quiz-content">
+      <h2 id="quiz-name"></h2>
+      <p id="quiz-desc"></p>
+      <ul id="quiz-links"></ul>
+    </div>
+    <a href="kuis.html" class="btn">Kembali ke Daftar Kuis</a>
+  </div>
+
+  <footer>
+    &copy; 2025 E-Learning SMP | Dikembangkan oleh Tim
+  </footer>
+
+  <script src="dataSiswa.js"></script>
+  <script src="dataKuis.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
