@@ -289,10 +289,10 @@ document.addEventListener('DOMContentLoaded', () => {
 document.addEventListener('DOMContentLoaded', () => {
     const path = window.location.pathname;
 
-    if (path.endsWith('index.html')) initLogin();
-    else if (path.endsWith('dashboard.html')) generateLeaderboard();
+    if (path.endsWith('dashboard.html')) generateLeaderboard();
     else if (path.endsWith('materi.html')) initMateriPage();
     else if (path.endsWith('materi-detail.html')) initMateriDetail();
     else if (path.endsWith('kuis.html')) initKuisPage();
     else if (path.endsWith('kuis-detail.html')) initKuisDetail();
+    else initLogin();
 });
