@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
   <title>E-Learning SMP - Forum Diskusi</title>
 </head>
+
 <body>
   <header class="headerBox">
     <button id="menu-toggle" class="menu-toggle">☰</button>
@@ -30,17 +32,13 @@
     <div class="card subject">
       <div class="content">
         <h2>Profil Siswa</h2>
-        <p>
-        <b>Nama: </b>Faiz<br>
-        <b>NISN: </b>1234<br>
-        <b>Kelas: </b>8A
-        </p>
+        <p id="profile-info"></p>
         <a href="#editprofile" class="btn">Edit Foto Profil</a>
       </div>
     </div>
 
     <div class="card">
-      <a href="index.html" class="btn">Log Out</a>
+      <a href="index.html" class="btn" id="logoutBtn">Log Out</a>
     </div>
   </div>
 
@@ -48,7 +46,29 @@
     &copy; 2025 E-Learning SMP | Dikembangkan oleh Tim
   </footer>
 
-  <script src="dataSiswa.js"></script>
+  <script>
+    // Check login
+    const user = JSON.parse(localStorage.getItem("loggedInUser"));
+    if (!user) window.location.href = "index.html";
+
+    // Update profile UI
+    document.addEventListener("DOMContentLoaded", () => {
+      const box = document.getElementById("profile-info");
+
+      box.innerHTML = `
+      <b>Nama:</b> ${user.real_name}<br>
+      <b>NISN:</b> ${user.username}<br>
+      <b>Kelas:</b> ${user.class}
+    `;
+    });
+
+    // Logout
+    document.getElementById("logoutBtn").addEventListener("click", function () {
+      localStorage.removeItem("loggedInUser");
+    });
+  </script>
+
   <script src="main.js"></script>
 </body>
+
 </html>
