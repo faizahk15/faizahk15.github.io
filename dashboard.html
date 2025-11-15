@@ -6,6 +6,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
   <title>E-Learning SMP</title>
+  <script>
+    const user = JSON.parse(localStorage.getItem("loggedInUser"));
+    if (!user) {
+      window.location.href = "index.html";
+    }
+  </script>
 </head>
 
 <body>
@@ -35,19 +41,19 @@
       <p>Peringkat siswa berdasarkan nilai total dari kuis & tugas.</p>
 
       <div class="table-wrapper">
-      <table>
-        <thead>
-          <tr>
-            <th>Peringkat</th>
-            <th>Nama Siswa</th>
-            <th>Kelas</th>
-            <th>Nilai Total</th>
-          </tr>
-        </thead>
-        <tbody id="leaderboard-body">
-          <!-- leaderboard rows injected here -->
-        </tbody>
-      </table>
+        <table>
+          <thead>
+            <tr>
+              <th>Peringkat</th>
+              <th>Nama Siswa</th>
+              <th>Kelas</th>
+              <th>Nilai Total</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboard-body">
+            <!-- leaderboard rows injected here -->
+          </tbody>
+        </table>
       </div>
     </div>
 

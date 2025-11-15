@@ -4,116 +4,127 @@ const API = 'https://elearning-api-production-70eb.up.railway.app/api'
 
 // Login
 function initLogin() {
-    const form = document.getElementById('loginForm');
-    if (!form) return; // safety check in case the form doesn't exist
+  const form = document.getElementById('loginForm');
+  if (!form) return;
 
-    form.addEventListener('submit', function (e) {
-        e.preventDefault();
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
 
-        const username = document.getElementById('username').value.trim();
-        const password = document.getElementById('password').value.trim();
-        const errorMsg = document.getElementById('error-msg');
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+    const errorMsg = document.getElementById('error-msg');
 
-        // Find user in dataSiswa
-        const user = dataSiswa.find(s =>
-            s.id === username || s.name.toLowerCase() === username.toLowerCase()
-        );
+    try {
+      const res = await fetch("https://elearning-api-production-70eb.up.railway.app/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      });
 
-        if (user && user.p === password) {
-            // Successful login
-            localStorage.setItem('loggedInUser', JSON.stringify(user));
-            window.location.href = 'dashboard.html';
-        } else {
-            // Invalid login
-            errorMsg.style.display = 'block';
-        }
-    });
+      const data = await res.json();
+
+      if (data.success) {
+        // save user to localStorage
+        localStorage.setItem("loggedInUser", JSON.stringify(data.user));
+
+        // redirect to dashboard
+        window.location.href = "dashboard.html";
+      } else {
+        errorMsg.style.display = "block";
+      }
+
+    } catch (error) {
+      console.error(error);
+      errorMsg.style.display = "block";
+    }
+  });
 }
+
 // Login message
 window.addEventListener('DOMContentLoaded', () => {
-    const user = JSON.parse(localStorage.getItem('loggedInUser'));
-    if (user) {
-        const msg = document.getElementById('welcome-msg');
-        if (msg) msg.textContent = `Selamat datang, ${user.name}!`;
-    }
+  const user = JSON.parse(localStorage.getItem('loggedInUser'));
+  if (user) {
+    const msg = document.getElementById('welcome-msg');
+    if (msg) msg.textContent = `Selamat datang, ${user.real_name}!`;
+  }
 });
 
 
 // Leaderboard
 async function generateLeaderboard() {
-    const tbody = document.getElementById('leaderboard-body');
-    tbody.innerHTML = '';
+  const tbody = document.getElementById('leaderboard-body');
+  tbody.innerHTML = '';
 
-    try {
-        const res = await fetch(`${API}/leaderboard`);
-        const data = await res.json();
+  try {
+    const res = await fetch(`${API}/leaderboard`);
+    const data = await res.json();
 
-        data.forEach((row, index) => {
-            const tr = document.createElement("tr");
+    data.forEach((row, index) => {
+      const tr = document.createElement("tr");
 
-            if (index === 0) tr.classList.add('rank-1');
-            else if (index === 1) tr.classList.add('rank-2');
-            else if (index === 2) tr.classList.add('rank-3');
+      if (index === 0) tr.classList.add('rank-1');
+      else if (index === 1) tr.classList.add('rank-2');
+      else if (index === 2) tr.classList.add('rank-3');
 
-            tr.innerHTML = `
+      tr.innerHTML = `
                 <td>${index + 1}</td>
                 <td>${row.real_name}</td>
                 <td>${row.class}</td>
                 <td>${row.total_score}</td>
             `;
 
-            tbody.appendChild(tr);
-        });
-    } catch (err) {
-        console.error(err);
-        tbody.innerHTML = `<tr><td colspan="4">Gagal memuat leaderboard</td></tr>`;
-    }
+      tbody.appendChild(tr);
+    });
+  } catch (err) {
+    console.error(err);
+    tbody.innerHTML = `<tr><td colspan="4">Gagal memuat leaderboard</td></tr>`;
+  }
 }
 
 
 
 // Subject pages
 function initMateriPage() {
-    const buttons = document.querySelectorAll('.card.subject .btn');
+  const buttons = document.querySelectorAll('.card.subject .btn');
 
-    buttons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const subject = btn.closest('.card').querySelector('h3').textContent.toLowerCase();
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const subject = btn.closest('.card').querySelector('h3').textContent.toLowerCase();
 
-            // Match the key used in materiData
-            let subjectKey;
-            if (subject.includes('matematika')) subjectKey = 'matematika';
-            else if (subject.includes('pengetahuan')) subjectKey = 'ipa';
-            else if (subject.includes('indonesia')) subjectKey = 'bindo';
+      // Match the key used in materiData
+      let subjectKey;
+      if (subject.includes('matematika')) subjectKey = 'matematika';
+      else if (subject.includes('pengetahuan')) subjectKey = 'ipa';
+      else if (subject.includes('indonesia')) subjectKey = 'bindo';
 
-            // Navigate and pass the subject via query parameter
-            if (subjectKey) {
-                window.location.href = `materi-detail.html?subject=${subjectKey}`;
-            }
-        });
+      // Navigate and pass the subject via query parameter
+      if (subjectKey) {
+        window.location.href = `materi-detail.html?subject=${subjectKey}`;
+      }
     });
+  });
 }
 
 // Open details on subject page
 function initMateriDetail() {
-    const params = new URLSearchParams(window.location.search);
-    const subjectKey = params.get('subject');
+  const params = new URLSearchParams(window.location.search);
+  const subjectKey = params.get('subject');
 
-    const data = materiData[subjectKey];
-    if (!data) return;
+  const data = materiData[subjectKey];
+  if (!data) return;
 
-    document.getElementById('subject-title').textContent = `Materi: ${data.name}`;
-    document.getElementById('materi-name').textContent = data.name;
-    document.getElementById('materi-desc').textContent = data.desc;
+  document.getElementById('subject-title').textContent = `Materi: ${data.name}`;
+  document.getElementById('materi-name').textContent = data.name;
+  document.getElementById('materi-desc').textContent = data.desc;
 
-    const linksList = document.getElementById('materi-links');
-    linksList.innerHTML = '';
+  const linksList = document.getElementById('materi-links');
+  linksList.innerHTML = '';
 
-    data.links.forEach(link => {
-        const li = document.createElement('li');
-        li.innerHTML = `<a href="${link.url}" target="_blank">${link.text}</a>`;
-        linksList.appendChild(li);
-    });
+  data.links.forEach(link => {
+    const li = document.createElement('li');
+    li.innerHTML = `<a href="${link.url}" target="_blank">${link.text}</a>`;
+    linksList.appendChild(li);
+  });
 }
 
 // Quiz page
@@ -182,11 +193,11 @@ function initKuisDetail() {
       <div class="q-text">${item.q}</div>
       <div class="q-options">
         ${item.options.map((opt, i) =>
-          `<label style="display:block; margin:6px 0;">
+      `<label style="display:block; margin:6px 0;">
               <input type="radio" name="q${idx}" value="${i}">
               <span style="margin-left:8px">${opt}</span>
             </label>`
-        ).join('')}
+    ).join('')}
       </div>
       <div class="feedback" style="margin-top:6px; display:none;"></div>
     `;
@@ -292,12 +303,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Page detection and initialization
 document.addEventListener('DOMContentLoaded', () => {
-    const path = window.location.pathname;
+  const path = window.location.pathname;
 
-    if (path.endsWith('dashboard.html')) generateLeaderboard();
-    else if (path.endsWith('materi.html')) initMateriPage();
-    else if (path.endsWith('materi-detail.html')) initMateriDetail();
-    else if (path.endsWith('kuis.html')) initKuisPage();
-    else if (path.endsWith('kuis-detail.html')) initKuisDetail();
-    else initLogin();
+  if (path.endsWith('dashboard.html')) generateLeaderboard();
+  else if (path.endsWith('materi.html')) initMateriPage();
+  else if (path.endsWith('materi-detail.html')) initMateriDetail();
+  else if (path.endsWith('kuis.html')) initKuisPage();
+  else if (path.endsWith('kuis-detail.html')) initKuisDetail();
+  else initLogin();
 });
