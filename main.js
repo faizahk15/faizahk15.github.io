@@ -1,5 +1,7 @@
 // main.js
 
+const API = 'https://elearning-api-production-70eb.up.railway.app/api'
+
 // Login
 function initLogin() {
     const form = document.getElementById('loginForm');
@@ -38,33 +40,36 @@ window.addEventListener('DOMContentLoaded', () => {
 
 
 // Leaderboard
-function generateLeaderboard() {
-    // Sort dataSiswa by score (descending)
-    const sortedData = [...dataSiswa].sort((a, b) => b.score - a.score);
-
-    // Find the tbody element
+async function generateLeaderboard() {
     const tbody = document.getElementById('leaderboard-body');
-    tbody.innerHTML = ''; // Clear existing rows
+    tbody.innerHTML = '';
 
-    // Generate rows
-    sortedData.forEach((siswa, index) => {
-        const tr = document.createElement('tr');
+    try {
+        const res = await fetch(`${API}/leaderboard`);
+        const data = await res.json();
 
-        // Optional: add a class for top ranks
-        if (index === 0) tr.classList.add('rank-1');
-        else if (index === 1) tr.classList.add('rank-2');
-        else if (index === 2) tr.classList.add('rank-3');
+        data.forEach((row, index) => {
+            const tr = document.createElement("tr");
 
-        tr.innerHTML = `
-      <td>${index + 1}</td>
-      <td>${siswa.name}</td>
-      <td>${siswa.class}</td>
-      <td>${siswa.score}</td>
-    `;
+            if (index === 0) tr.classList.add('rank-1');
+            else if (index === 1) tr.classList.add('rank-2');
+            else if (index === 2) tr.classList.add('rank-3');
 
-        tbody.appendChild(tr);
-    });
+            tr.innerHTML = `
+                <td>${index + 1}</td>
+                <td>${row.real_name}</td>
+                <td>${row.class}</td>
+                <td>${row.total_score}</td>
+            `;
+
+            tbody.appendChild(tr);
+        });
+    } catch (err) {
+        console.error(err);
+        tbody.innerHTML = `<tr><td colspan="4">Gagal memuat leaderboard</td></tr>`;
+    }
 }
+
 
 
 // Subject pages
