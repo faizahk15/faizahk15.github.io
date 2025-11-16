@@ -51,38 +51,90 @@ window.addEventListener('DOMContentLoaded', () => {
 
 
 // Leaderboard
+let remainingRows = [];  // stores rows after top 5
+let displayedCount = 0;  // how many extra rows displayed so far
+
 async function generateLeaderboard() {
   const tbody = document.getElementById('leaderboard-body');
-  tbody.innerHTML = '';
+  const user = JSON.parse(localStorage.getItem("loggedInUser"));
 
-  try {
-    const res = await fetch(`${API}/leaderboard`);
-    const data = await res.json();
+  if (!user) return;
 
-    data.forEach((row, index) => {
-      const tr = document.createElement("tr");
+  // Fetch leaderboard for user class group
+  const res = await fetch(`https://elearning-api-production-70eb.up.railway.app/api/leaderboard/${user.class}`);
+  const data = await res.json();
 
-      if (index === 0) tr.classList.add('rank-1');
-      else if (index === 1) tr.classList.add('rank-2');
-      else if (index === 2) tr.classList.add('rank-3');
+  const topFive = data.topFive;
+  const fullRank = data.fullRank;
 
-      tr.innerHTML = `
-                <td>${index + 1}</td>
-                <td>${row.real_name}</td>
-                <td>${row.class}</td>
-                <td>${row.total_score}</td>
-            `;
+  // Reset display
+  tbody.innerHTML = "";
+  remainingRows = [];
+  displayedCount = 0;
 
-      tbody.appendChild(tr);
-    });
-  } catch (err) {
-    console.error(err);
-    tbody.innerHTML = `<tr><td colspan="4">Gagal memuat leaderboard</td></tr>`;
-  }
+  // Render Top 5
+  topFive.forEach((row, index) => {
+    const tr = document.createElement("tr");
+    if (index === 0) tr.classList.add('rank-1');
+    else if (index === 1) tr.classList.add('rank-2');
+    else if (index === 2) tr.classList.add('rank-3');
+    tr.innerHTML = `
+      <td>${index + 1}</td>
+      <td>${row.real_name}</td>
+      <td>${row.class}</td>
+      <td>${row.total_score}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Store remaining rows (starting from index 5)
+  remainingRows = fullRank.slice(5);
+
+  // Find logged-in user's rank
+  const userRankIndex = fullRank.findIndex(x => x.id_user === user.id_user);
+  const userRank = userRankIndex + 1;
+
+  // Show user rank somewhere on page
+  const rankBox = document.getElementById("user-rank");
+  if (rankBox) rankBox.textContent = `Peringkat Anda: ${userRank}`;
 }
 
 
+// Load more leaderboard
+function loadMore() {
+  const loadMoreBtn = document.getElementById("load-more");
+  if (!loadMoreBtn) return;  // Do nothing if button doesn't exist (login page safe)
 
+  loadMoreBtn.addEventListener("click", () => {
+    const tbody = document.getElementById('leaderboard-body');
+
+    // load next 10 rows
+    const nextBatch = remainingRows.slice(displayedCount, displayedCount + 10);
+
+    nextBatch.forEach((row, i) => {
+      const tr = document.createElement("tr");
+
+      tr.innerHTML = `
+        <td>${5 + displayedCount + i + 1}</td>
+        <td>${row.real_name}</td>
+        <td>${row.class}</td>
+        <td>${row.total_score}</td>
+      `;
+
+      tbody.appendChild(tr);
+    });
+
+    displayedCount += nextBatch.length;
+
+    // hide button if all rows loaded
+    if (displayedCount >= remainingRows.length) {
+      loadMoreBtn.style.display = "none";
+    }
+  });
+}
+
+
+/*
 // Subject pages
 function initMateriPage() {
   const buttons = document.querySelectorAll('.card.subject .btn');
@@ -126,6 +178,83 @@ function initMateriDetail() {
     linksList.appendChild(li);
   });
 }
+  */
+
+
+
+const subjectLogos = {
+  "Matematika": "assets/logo_mtk.jpg",
+  "Ilmu Pengetahuan Alam": "assets/logo_ipa.jpg",
+  "Bahasa Indonesia": "assets/logo_id.jpg",
+};
+
+// Subject pages
+async function initMateriPageDB() {
+  const user = JSON.parse(localStorage.getItem("loggedInUser"));
+  if (!user) return;
+
+  const container = document.getElementById("mapel-list");
+
+  const res = await fetch(`${API}/materi/list/${user.class}`);
+  const data = await res.json();
+
+  container.innerHTML = "";
+
+  data.mapel.forEach(mapel => {
+    const card = document.createElement("div");
+    card.classList.add("card", "subject");
+    card.innerHTML = `
+      <div class="content">
+        <h3>${mapel.name}</h3>
+        <div class="btn" data-id="${mapel.id_mapel}">Lihat Materi</div>
+      </div>
+      <img src="${subjectLogos[mapel.name] || 'assets/logo_default.jpg'}" class="thumb">
+    `;
+
+    container.appendChild(card);
+  });
+
+  // click handler
+  container.querySelectorAll(".btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.id;
+      window.location.href = `materi-detail.html?id=${id}`;
+    });
+  });
+}
+
+// Open details on subject page
+async function initMateriDetailDB() {
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get("id");
+
+  const nameEl = document.getElementById("materi-name");
+  const descEl = document.getElementById("materi-desc");
+  const listEl = document.getElementById("materi-items");
+
+  const res = await fetch(`${API}/materi/detail/${id}`);
+  const data = await res.json();
+
+  // No subject name stored here, so we just show total count
+  nameEl.textContent = `Daftar Materi (${data.materi.length})`;
+  descEl.textContent = "";
+
+  listEl.innerHTML = "";
+
+  data.materi.forEach(m => {
+    const item = document.createElement("div");
+    item.classList.add("card");
+    item.innerHTML = `
+      <h3>${m.title}</h3>
+      <p><strong>Guru Pengampu:</strong> ${m.teacher_name || "Tidak diketahui"}</p>
+      <p>${m.description}</p>
+      <a href="${m.file_url}" target="_blank" class="btn">Buka File</a>
+    `;
+
+    listEl.appendChild(item);
+  });
+}
+
 
 // Quiz page
 function initKuisPage() {
@@ -303,11 +432,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Page detection and initialization
 document.addEventListener('DOMContentLoaded', () => {
+  loadMore();
   const path = window.location.pathname;
 
   if (path.endsWith('dashboard.html')) generateLeaderboard();
-  else if (path.endsWith('materi.html')) initMateriPage();
-  else if (path.endsWith('materi-detail.html')) initMateriDetail();
+  else if (path.endsWith('materi.html')) initMateriPageDB();
+else if (path.endsWith('materi-detail.html')) initMateriDetailDB();
+
   else if (path.endsWith('kuis.html')) initKuisPage();
   else if (path.endsWith('kuis-detail.html')) initKuisDetail();
   else initLogin();
