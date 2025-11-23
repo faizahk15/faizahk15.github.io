@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Tambah Materi</title>
+  <link rel="stylesheet" href="style.css">
+  <script>
+    const user = JSON.parse(localStorage.getItem("loggedInUser"));
+    if (!user || user.role !== "teacher") window.location.href = "index.html";
+  </script>
+</head>
+
+<body>
+
+  <header class="headerBox">
+    <div class="headerTitle">
+      <h2>Tambah Materi Baru</h2>
+      <p id="materi-info" style="margin-bottom: 10px; opacity: 0.8;"></p>
+    </div>
+  </header>
+
+  <div class="container">
+    <form id="addMateriForm" class="card">
+
+      <label>Judul Materi</label>
+      <input type="text" id="title" required>
+
+      <label>Deskripsi</label>
+      <textarea id="description" required></textarea>
+
+      <label>File URL</label>
+      <input type="text" id="file_url">
+
+      <label>Sort Order</label>
+      <input type="number" id="sort_order" value="1">
+
+      <button class="btn" type="submit">Tambah Materi</button>
+    </form>
+
+    <p id="add-status"></p>
+  </div>
+
+  <div class="container">
+    <a href="dashboard.html" class="btn">Batal</a>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+
+</html>

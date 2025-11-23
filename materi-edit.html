@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Edit Materi</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <header class="headerBox">
+    <div class="headerTitle">
+      <h2>Edit Materi</h2>
+      <p id="materi-info" style="margin-bottom: 10px; opacity: 0.8;"></p>
+    </div>
+  </header>
+
+  <div class="container">
+    <form id="editMateriForm" class="card">
+
+      <label>Judul Materi</label>
+      <input type="text" id="title">
+
+      <label>Deskripsi</label>
+      <textarea id="description"></textarea>
+
+      <label>File URL</label>
+      <input type="text" id="file_url">
+
+      <label>Sort Order</label>
+      <input type="number" id="sort_order">
+
+      <button class="btn" type="submit">Simpan Perubahan</button>
+    </form>
+
+    <p id="edit-status"></p>
+  </div>
+
+  <div class="container">
+    <a href="dashboard.html" class="btn">Batal</a>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+
+</html>

@@ -35,7 +35,8 @@
     <a href="profil.html">Profil</a>
   </nav>
 
-  <div class="container">
+  <!-- STUDENT -->
+  <div class="container" data-role="student">
     <div class="card">
       <h2>🏆 Papan Peringkat</h2>
       <p>Peringkat siswa berdasarkan nilai total dari kuis & tugas.</p>
@@ -81,6 +82,49 @@
       <p><a href="#">Kuis Matematika Bab 2</a> - Deadline: 21 Sept 2025</p>
     </div>
   </div>
+
+  <!-- TEACHER -->
+  <div class="container" data-role="teacher">
+
+    <div class="card">
+      <h2>📚 Kelas yang Diampu</h2>
+      <ul id="teacher-classes">
+        <li>Memuat data...</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>📄 Materi Anda</h2>
+      <div id="teacher-materi">Memuat materi...</div>
+      <br>
+      <a href="materi-add.html" class="btn">+ Tambah Materi</a>
+    </div>
+
+    <div class="card">
+      <h2>👥 Daftar Siswa</h2>
+      <p id="teacher-class-info" style="margin-bottom: 10px; opacity: 0.8;"></p>
+      <div class="table-wrapper">
+        <table id="teacher-students-table">
+          <thead>
+            <tr>
+              <th>Nama Siswa</th>
+              <th>NISN</th>
+            </tr>
+          </thead>
+          <tbody id="teacher-students"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>📝 Aktivitas Terakhir</h2>
+      <div id="teacher-activity">
+        Memuat aktivitas...
+      </div>
+    </div>
+
+  </div>
+
 
   <footer>
     &copy; 2025 E-Learning SMP | Dikembangkan oleh Tim

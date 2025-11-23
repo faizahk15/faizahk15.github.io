@@ -1,6 +1,65 @@
 // main.js
 
-const API = 'https://elearning-api-production-70eb.up.railway.app/api'
+const API = 'https://elearning-api-production-70eb.up.railway.app/api';
+
+function applyRoleUI() {
+  const user = JSON.parse(localStorage.getItem("loggedInUser"));
+  if (!user) return;
+
+  const role = user.role;
+
+  // Mark <body> with role
+  document.body.dataset.role = role;
+
+  // Change header text if needed
+  const headerTitle = document.querySelector(".headerTitle p");
+  if (headerTitle) {
+    if (role === "teacher") headerTitle.textContent += " (Guru)";
+    else if (role === "admin") headerTitle.textContent += " (Admin)";
+  }
+
+  // Change sidebar menu depending on role
+  const nav = document.getElementById("nav-bar");
+  if (nav) {
+    if (role === "teacher") {
+      // Teacher menu layout (hide leaderboard, hide forum, etc.)
+      nav.innerHTML = `
+        <a href="dashboard.html">Dashboard</a>
+        <a href="materi.html">Kelola Materi</a>
+        <a href="forum.html">Forum</a>
+        <a href="profil.html">Profil</a>
+      `;
+    }
+
+    if (role === "admin") {
+      nav.innerHTML = `
+        <a href="dashboard.html">Dashboard</a>
+        <a href="users.html">Kelola Pengguna</a>
+        <a href="materi.html">Kelola Materi</a>
+        <a href="profil.html">Profil</a>
+      `;
+    }
+  }
+
+  // Hide student-only elements for teachers/admin
+  const studentOnlyEls = document.querySelectorAll("[data-role='student']");
+  studentOnlyEls.forEach(el => {
+    if (role !== "student") el.style.display = "none";
+  });
+
+  // Hide teacher-only elements for students
+  const teacherOnlyEls = document.querySelectorAll("[data-role='teacher']");
+  teacherOnlyEls.forEach(el => {
+    if (role !== "teacher") el.style.display = "none";
+  });
+
+  // Hide admin-only elements
+  const adminOnlyEls = document.querySelectorAll("[data-role='admin']");
+  adminOnlyEls.forEach(el => {
+    if (role !== "admin") el.style.display = "none";
+  });
+}
+
 
 // Login
 function initLogin() {
@@ -49,6 +108,8 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+
+// STUDENT PAGES
 
 // Leaderboard
 let remainingRows = [];  // stores rows after top 5
@@ -400,6 +461,236 @@ function initKuisDetail() {
 
 
 
+// TEACHER PAGES
+
+// teacher dashboard
+async function initTeacherDashboard() {
+  const user = JSON.parse(localStorage.getItem("loggedInUser"));
+  if (!user || user.role !== "teacher") return;
+
+  // Load teacher classes
+  const resClass = await fetch(`${API}/teacher/classes/${user.id_user}`);
+  const dataClass = await resClass.json();
+
+  const classList = document.getElementById("teacher-classes");
+  classList.innerHTML = "";
+  dataClass.classes.forEach(c => {
+    const li = document.createElement("li");
+    li.innerHTML = `<strong>${c.class}</strong> - ${c.name}`;
+    classList.appendChild(li);
+  });
+
+  // Load teacher materi
+  const resMat = await fetch(`${API}/teacher/materi/${user.id_user}`);
+  const dataMat = await resMat.json();
+
+  const materiContainer = document.getElementById("teacher-materi");
+  materiContainer.innerHTML = "";
+  dataMat.materi.forEach(m => {
+    const div = document.createElement("div");
+    div.innerHTML = `
+      <p><strong>${m.title}</strong> — ${m.class}</p>
+      <a href="${m.file_url}" target="_blank">Lihat</a><br>
+      <button class="btn" onclick="editMateri(${m.id_materi})">Edit</button>
+      <button class="btn" onclick="deleteMateri(${m.id_materi})" style="background:#d66">Hapus</button>
+    `;
+    materiContainer.appendChild(div);
+  });
+
+
+  // Load activity
+  const activity = document.getElementById("teacher-activity");
+  activity.innerHTML = dataMat.materi.length
+    ? `Anda mengunggah ${dataMat.materi.length} materi.`
+    : "Belum ada aktivitas.";
+}
+
+// get teacher mapel
+function getTeacherMapel(row) {
+  if (row.grade_math === 1) return { id_mapel: 1, name: "Matematika" };
+  if (row.grade_science === 1) return { id_mapel: 2, name: "Ilmu Pengetahuan Alam" };
+  if (row.grade_indonesia === 1) return { id_mapel: 3, name: "Bahasa Indonesia" };
+  return null;
+}
+
+// show teacher class and mapel
+async function showTeacherClassAndMapel() {
+  const user = JSON.parse(localStorage.getItem("loggedInUser"));
+  if (!user || user.role !== "teacher") return;
+
+  const classInfoEl = document.getElementById("teacher-class-info") ||
+    document.getElementById("materi-info");
+  if (!classInfoEl) return;
+
+  const res = await fetch(`${API}/teacher/mapel/${user.id_user}`);
+  const data = await res.json();
+
+  if (!data.success) return;
+
+  const mapel = data.mapel.name;
+  const className = user.class;
+
+  classInfoEl.textContent = `Kelas: ${className} · Mapel: ${mapel}`;
+}
+
+
+// laod teacher students
+async function loadTeacherStudents() {
+  const user = JSON.parse(localStorage.getItem("loggedInUser"));
+  if (!user || user.role !== "teacher") return;
+
+  const tbody = document.getElementById("teacher-students");
+  if (!tbody) return;
+
+  const res = await fetch(`${API}/teacher/students/${user.id_user}`);
+  const data = await res.json();
+
+  tbody.innerHTML = "";
+
+  if (!data.students.length) {
+    tbody.innerHTML = `
+      <tr><td colspan="2" style="text-align:center;">Tidak ada siswa.</td></tr>
+    `;
+    return;
+  }
+
+  data.students.forEach(s => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${s.real_name}</td>
+      <td>${s.username}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+
+// materi-add.html
+async function initAddMateriPage() {
+  const user = JSON.parse(localStorage.getItem("loggedInUser"));
+  if (!user || user.role !== "teacher") return;
+
+  // Get this teacher's mapel automatically
+  const resMapel = await fetch(`${API}/teacher/mapel/${user.id_user}`);
+  const { mapel } = await resMapel.json();
+
+  const form = document.getElementById("addMateriForm");
+  const status = document.getElementById("add-status");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const user = JSON.parse(localStorage.getItem("loggedInUser"));
+
+    // 1. Get teacher's mapel
+    const resMapel = await fetch(`${API}/teacher/mapel/${user.id_user}`);
+    const mapelData = await resMapel.json();
+
+    if (!mapelData.success || !mapelData.mapel) {
+      alert("Gagal menemukan mapel yang diajar guru ini.");
+      return;
+    }
+
+    const mapel = mapelData.mapel;   // <-- contains id_mapel
+
+    // 2. Build payload
+    const payload = {
+      id_mapel: mapel.id_mapel,
+      teacher_id: user.id_user,
+      title: document.getElementById("title").value,
+      description: document.getElementById("description").value,
+      file_url: document.getElementById("file_url").value || "",
+      visible_to_class: user.class,
+      sort_order: document.getElementById("sort_order").value,
+    };
+
+    // 3. Submit to backend
+    const res = await fetch(`${API}/materi/add`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      alert("Materi berhasil ditambahkan");
+      window.location.href = "dashboard.html";
+    } else {
+      alert("Error: " + data.error);
+    }
+  });
+
+}
+
+// edit materi
+function editMateri(id) {
+  window.location.href = `materi-edit.html?id=${id}`;
+}
+
+async function initEditMateriPage() {
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get("id");
+  const status = document.getElementById("edit-status");
+  const user = JSON.parse(localStorage.getItem("loggedInUser"));
+
+  // Load materi
+  const res = await fetch(`${API}/materi/get/${id}`);
+  const data = await res.json();
+  const m = data.materi;
+
+  document.getElementById("title").value = m.title;
+  document.getElementById("description").value = m.description;
+  document.getElementById("file_url").value = m.file_url;
+  document.getElementById("sort_order").value = m.sort_order;
+
+  document.getElementById("editMateriForm").addEventListener("submit", async e => {
+    e.preventDefault();
+
+    const payload = {
+      title: document.getElementById("title").value,
+      description: document.getElementById("description").value,
+      file_url: document.getElementById("file_url").value || "",
+      visible_to_class: user.class,
+      sort_order: document.getElementById("sort_order").value,
+    };
+
+    const res = await fetch(`${API}/materi/edit/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+
+    const r = await res.json();
+    status.textContent = r.message;
+
+    if (r.success) {
+      setTimeout(() => window.location.href = "dashboard.html", 1000);
+    }
+  });
+}
+
+
+
+async function deleteMateri(id) {
+  if (!confirm("Hapus materi ini?")) return;
+
+  const res = await fetch(`${API}/materi/delete/${id}`, { method: "DELETE" });
+  const data = await res.json();
+
+  alert(data.message);
+  location.reload();
+}
+
+
+
+
+
+
+
+
+
 
 // Hybrid nav: top bar on desktop, sidebar on mobile
 document.addEventListener('DOMContentLoaded', () => {
@@ -432,12 +723,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Page detection and initialization
 document.addEventListener('DOMContentLoaded', () => {
+  applyRoleUI();
   loadMore();
   const path = window.location.pathname;
 
-  if (path.endsWith('dashboard.html')) generateLeaderboard();
+
+  if (path.endsWith('dashboard.html')) {
+    const user = JSON.parse(localStorage.getItem("loggedInUser"));
+    if (user.role === "teacher") {
+      initTeacherDashboard();
+      loadTeacherStudents();
+      showTeacherClassAndMapel();   // <-- add this
+    } else {
+      generateLeaderboard();
+    }
+  }
+
+  else if (path.endsWith('materi-add.html')) {
+    showTeacherClassAndMapel();     // <-- add
+    initAddMateriPage();
+  }
+
+  else if (path.endsWith('materi-edit.html')) {
+    showTeacherClassAndMapel();     // <-- add
+    initEditMateriPage();
+  }
+
   else if (path.endsWith('materi.html')) initMateriPageDB();
-else if (path.endsWith('materi-detail.html')) initMateriDetailDB();
+  else if (path.endsWith('materi-detail.html')) initMateriDetailDB();
 
   else if (path.endsWith('kuis.html')) initKuisPage();
   else if (path.endsWith('kuis-detail.html')) initKuisDetail();
