@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+  <title>Admin – Kelola Pengguna</title>
+</head>
+
+<body>
+  <header class="headerBox">
+    <button id="menu-toggle" class="menu-toggle">☰</button>
+    <div class="headerSpacer"></div>
+    <div class="headerTitle">
+      <h1>E-Learning SMP</h1>
+      <p>Kelola Pengguna (Admin)</p>
+    </div>
+    <div class="headerProfile">
+      <img src="assets/profile.png" class="thumb">
+    </div>
+  </header>
+
+  <nav id="nav-bar">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="materi.html">Materi</a>
+    <a href="forum.html">Forum</a>
+    <a href="profil.html">Profil</a>
+  </nav>
+
+  <div class="container" data-role="admin">
+
+    <!-- CREATE USER -->
+    <div class="card">
+      <h2>➕ Tambah Pengguna Baru</h2>
+
+      <form id="adminCreateUser">
+        <input type="text" id="newRealName" placeholder="Nama lengkap" required>
+        <input type="text" id="newUsername" placeholder="Username / NISN" required>
+        <input type="password" id="newPassword" placeholder="Password" required>
+
+        <select id="newRole" required>
+          <option value="student">Siswa</option>
+          <option value="teacher">Guru</option>
+          <option value="admin">Admin</option>
+        </select>
+
+        <div id="classField">
+          <label>Kelas</label>
+          <select id="newClass">
+            <option value="">Pilih kelas</option>
+            <option value="7A">7A</option>
+            <option value="7B">7B</option>
+            <option value="7C">7C</option>
+            <option value="8A">8A</option>
+            <option value="8B">8B</option>
+            <option value="8C">8C</option>
+            <option value="9A">9A</option>
+            <option value="9B">9B</option>
+            <option value="9C">9C</option>
+          </select>
+        </div>
+
+
+        <button class="btn" type="submit">Buat Pengguna</button>
+      </form>
+
+      <p id="adminCreateStatus"></p>
+    </div>
+
+    <!-- SEARCH BAR -->
+    <div class="card">
+      <h2>🔍 Cari Pengguna</h2>
+      <input type="text" id="adminSearch" placeholder="Cari nama, username, atau kelas">
+    </div>
+
+    <!-- USER LIST -->
+    <div class="card">
+      <h2>📄 Daftar Pengguna</h2>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Nama</th>
+              <th>Username</th>
+              <th>Kelas</th>
+              <th>Role</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="adminUserTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- EDIT MODAL -->
+    <div id="adminEditModal" class="modal hidden">
+      <div class="modal-box">
+        <h3>Edit Pengguna</h3>
+
+        <label>Nama</label><input id="editRealName">
+
+        <label>Username</label><input id="editUsername">
+
+        <label>Password</label><input id="editPassword" type="password">
+
+        <label>Role</label>
+        <select id="editRole">
+          <option value="student">Siswa</option>
+          <option value="teacher">Guru</option>
+          <option value="admin">Admin</option>
+        </select>
+
+        <label>Kelas</label><input id="editClass">
+
+        <div id="adminEditStatus"></div>
+
+        <button class="btn" onclick="adminSaveEdit()">Simpan</button>
+        <button class="btn cancel" onclick="closeAdminEdit()">Batal</button>
+      </div>
+    </div>
+
+    <!-- DELETE MODAL -->
+    <div id="adminDeleteModal" class="modal hidden">
+      <div class="modal-box">
+        <h3>Hapus Pengguna</h3>
+        <p>Yakin ingin menghapus pengguna ini?</p>
+
+        <div id="adminDeleteStatus"></div>
+
+        <button class="btn danger" onclick="adminConfirmDelete()">Hapus</button>
+        <button class="btn cancel" onclick="closeAdminDelete()">Batal</button>
+      </div>
+    </div>
+
+
+
+  </div>
+
+  <footer>&copy; 2025 E-Learning SMP</footer>
+
+  <script src="main.js"></script>
+</body>
+
+</html>

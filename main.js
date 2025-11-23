@@ -672,7 +672,7 @@ async function initEditMateriPage() {
 }
 
 
-
+// delete materi
 async function deleteMateri(id) {
   if (!confirm("Hapus materi ini?")) return;
 
@@ -685,6 +685,202 @@ async function deleteMateri(id) {
 
 
 
+
+// ADMIN PAGES
+
+
+// make loadUsers available globally so create form can call it
+let adminAllUsers = [];
+
+// fetch and render users
+async function loadUsers(search = "") {
+  const res = await fetch(`${API}/admin/users?search=${encodeURIComponent(search)}`);
+  const data = await res.json();
+
+  adminAllUsers = data.users;
+
+  const table = document.getElementById("adminUserTable");
+  if (!table) return;
+
+  table.innerHTML = "";
+  adminAllUsers.forEach(u => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${u.real_name}</td>
+      <td>${u.username}</td>
+      <td>${u.class || "-"}</td>
+      <td>${u.role}</td>
+      <td class="actions">
+        <button class="btn small" onclick="adminOpenEdit(${u.id_user})">Edit</button>
+        <button class="btn small danger" style="background:#d55" onclick="adminOpenDelete(${u.id_user})">Hapus</button>
+      </td>
+    `;
+    table.appendChild(tr);
+  });
+}
+
+
+// ===== ADMIN — PAGE INIT =====
+async function initAdminPage() {
+  const user = JSON.parse(localStorage.getItem("loggedInUser"));
+  if (!user || user.role !== "admin") return;
+
+  const searchBox = document.getElementById("adminSearch");
+
+  // live search
+  if (searchBox) {
+    searchBox.addEventListener("input", () => {
+      loadUsers(searchBox.value);
+    });
+  }
+
+  loadUsers();
+}
+
+
+// ===== ADMIN — CREATE USER =====
+async function initAdminCreateForm() {
+  const form = document.getElementById("adminCreateUser");
+  if (!form) return;
+
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+
+    const payload = {
+      real_name: newRealName.value,
+      username: newUsername.value,
+      password: newPassword.value,
+      role: newRole.value,
+      class: newClass.value || 0
+    };
+
+    const res = await fetch(`${API}/admin/user/create`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    const msg = document.getElementById("adminCreateStatus");
+
+    if (data.success) {
+      msg.textContent = "Pengguna berhasil dibuat!";
+      msg.style.color = "green";
+      form.reset();
+
+      // refresh user table instantly
+      await loadUsers();
+    } else {
+      msg.textContent = data.error;
+      msg.style.color = "red";
+    }
+  });
+}
+
+
+const roleSelect = document.getElementById("newRole");
+const classField = document.getElementById("classField");
+const classSelect = document.getElementById("newClass");
+
+function adminRoleSelect() {
+  // initial state
+  classField.style.display = (roleSelect.value === "admin") ? "none" : "block";
+
+  roleSelect.addEventListener("change", () => {
+    if (roleSelect.value === "admin") {
+      classField.style.display = "none";
+      classSelect.value = "";
+    } else {
+      classField.style.display = "block";
+    }
+  });
+}
+
+
+let EDIT_USER_ID = null;
+let DELETE_USER_ID = null;
+
+/* ------------------ OPEN EDIT MODAL ------------------ */
+async function adminOpenEdit(id) {
+  EDIT_USER_ID = id;
+
+  const res = await fetch(`${API}/admin/users`);
+  const data = await res.json();
+  const user = data.users.find(u => u.id_user === id);
+
+  editRealName.value = user.real_name;
+  editUsername.value = user.username;
+  editPassword.value = ""; // optional — if empty, keep old password
+  editRole.value = user.role;
+  editClass.value = user.class || "";
+
+  document.getElementById("adminEditModal").classList.remove("hidden");
+}
+
+function closeAdminEdit() {
+  document.getElementById("adminEditModal").classList.add("hidden");
+}
+
+
+/* ------------------ SAVE EDIT ------------------ */
+async function adminSaveEdit() {
+  const payload = {
+    real_name: editRealName.value,
+    username: editUsername.value,
+    password: editPassword.value || "",
+    role: editRole.value,
+    class: editClass.value
+  };
+
+  const res = await fetch(`${API}/admin/user/edit/${EDIT_USER_ID}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+
+  const data = await res.json();
+  const msg = document.getElementById("adminEditStatus");
+
+  if (data.success) {
+    msg.textContent = "Berhasil diperbarui!";
+    msg.style.color = "green";
+    await initAdminPage();
+    setTimeout(closeAdminEdit, 800);
+  } else {
+    msg.textContent = data.error;
+    msg.style.color = "red";
+  }
+}
+
+
+/* ------------------ DELETE ------------------ */
+function adminOpenDelete(id) {
+  DELETE_USER_ID = id;
+  document.getElementById("adminDeleteModal").classList.remove("hidden");
+}
+
+function closeAdminDelete() {
+  document.getElementById("adminDeleteModal").classList.add("hidden");
+}
+
+async function adminConfirmDelete() {
+  const res = await fetch(`${API}/admin/user/delete/${DELETE_USER_ID}`, {
+    method: "DELETE"
+  });
+
+  const data = await res.json();
+  const msg = document.getElementById("adminDeleteStatus");
+
+  if (data.success) {
+    msg.textContent = "Pengguna telah dihapus.";
+    msg.style.color = "green";
+    await initAdminPage();
+    setTimeout(closeAdminDelete, 800);
+  } else {
+    msg.textContent = data.error;
+    msg.style.color = "red";
+  }
+}
 
 
 
@@ -747,6 +943,12 @@ document.addEventListener('DOMContentLoaded', () => {
   else if (path.endsWith('materi-edit.html')) {
     showTeacherClassAndMapel();     // <-- add
     initEditMateriPage();
+  }
+
+  else if (path.endsWith("admin-users.html")) {
+    initAdminPage();
+    initAdminCreateForm();
+    adminRoleSelect();
   }
 
   else if (path.endsWith('materi.html')) initMateriPageDB();
