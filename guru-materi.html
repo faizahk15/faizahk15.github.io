@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+  <title>E-Learning SMP</title>
+  <script>
+    const user = JSON.parse(localStorage.getItem("loggedInUser"));
+    if (!user) {
+      window.location.href = "index.html";
+    }
+  </script>
+</head>
+
+<body>
+  <header class="headerBox">
+    <button id="menu-toggle" class="menu-toggle">☰</button>
+    <div class="headerSpacer"></div>
+    <div class="headerTitle">
+      <h1>E-Learning SMP</h1>
+      <p id="welcome-msg"></p>
+    </div>
+    <div class="headerProfile">
+      <img src="assets/profile.png" class="thumb">
+    </div>
+  </header>
+
+  <nav id="nav-bar">
+    <a href="dashboard.html" class="select">Dashboard</a>
+    <a href="materi.html">Materi</a>
+    <a href="kuis.html">Kuis</a>
+    <a href="forum.html">Forum</a>
+    <a href="profil.html">Profil</a>
+  </nav>
+  
+  <!-- TEACHER -->
+  <div class="container" data-role="teacher">
+    <div class="card">
+      <h2>📄 Materi Anda</h2>
+      <div id="teacher-materi">Memuat materi...</div>
+      <br>
+      <a href="materi-add.html" class="btn">+ Tambah Materi</a>
+    </div>
+  </div>
+
+
+
+  <footer>
+    &copy; 2025 E-Learning SMP | Dikembangkan oleh Tim
+  </footer>
+
+  <script src="dataSiswa.js"></script>
+  <script src="main.js"></script>
+</body>
+
+</html>

@@ -25,7 +25,7 @@ function applyRoleUI() {
       // Teacher menu layout (hide leaderboard, hide forum, etc.)
       nav.innerHTML = `
         <a href="dashboard.html">Dashboard</a>
-        <a href="materi.html">Kelola Materi</a>
+        <a href="guru-materi.html">Kelola Materi</a>
         <a href="forum.html">Forum</a>
         <a href="profil.html">Profil</a>
       `;
@@ -34,7 +34,7 @@ function applyRoleUI() {
     if (role === "admin") {
       nav.innerHTML = `
         <a href="dashboard.html">Dashboard</a>
-        <a href="users.html">Kelola Pengguna</a>
+        <a href="admin-users.html">Kelola Pengguna</a>
         <a href="materi.html">Kelola Materi</a>
         <a href="profil.html">Profil</a>
       `;
