@@ -466,23 +466,57 @@ async function loadForumPosts() {
   const container = document.getElementById("post-container");
   if (!container) return;
 
-  const res = await fetch(`${API}/forum/posts`);
-  const data = await res.json();
+  const user = JSON.parse(localStorage.getItem("loggedInUser"));
+  if (!user) return;
 
-  container.innerHTML = "";
+  try {
+    // Only load posts from the same class as the user
+    const res = await fetch(`${API}/forum/posts?class=${user.class}`);
+    const data = await res.json();
 
-  data.posts.forEach(p => {
-    const div = document.createElement("div");
-    div.classList.add("post");
-    div.innerHTML = `
-      <h3>${p.title}</h3>
-      <p class="meta">Dikirim oleh <b>${p.author}</b> • ${p.created_at}</p>
-      <p>${p.content}</p>
-      <a href="forum-post.html?id=${p.id_post}" class="btn">Buka Diskusi</a>
-    `;
-    container.appendChild(div);
-  });
+    container.innerHTML = "";
+
+    if (data.posts.length === 0) {
+      container.innerHTML = `<p>Belum ada diskusi di kelas ${user.class}. <a href="#" onclick="document.getElementById('newPostTitle').focus()">Mulai diskusi pertama!</a></p>`;
+      return;
+    }
+
+    data.posts.forEach(p => {
+      const div = document.createElement("div");
+      div.classList.add("post");
+      div.innerHTML = `
+        <h3>${p.title}</h3>
+        <p class="meta">Dikirim oleh <b>${p.author}</b> • ${p.created_at} • <span class="class-badge">${p.class}</span></p>
+        <p>${p.content}</p>
+        <a href="forum-post.html?id=${p.id_post}" class="btn">Buka Diskusi</a>
+      `;
+      container.appendChild(div);
+    });
+
+  } catch (err) {
+    console.error("Error loading forum posts:", err);
+    container.innerHTML = "<p>Error memuat diskusi.</p>";
+  }
 }
+
+// Update class badge in forum header
+function updateForumClassBadge() {
+  const user = JSON.parse(localStorage.getItem("loggedInUser"));
+  if (!user) return;
+  
+  const classBadge = document.getElementById("user-class-badge");
+  const forumDescription = document.getElementById("forum-description");
+  
+  if (classBadge) {
+    classBadge.textContent = user.class;
+    classBadge.classList.add("class-badge");
+  }
+  
+  if (forumDescription) {
+    forumDescription.textContent = `Diskusi untuk siswa kelas ${user.class}. Hanya postingan dari kelas ${user.class} yang ditampilkan.`;
+  }
+}
+
 
 
 // create new posts
@@ -1510,6 +1544,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   else if (path.endsWith('forum.html')) {
+    updateForumClassBadge();
     loadForumPosts();
     initForumNewPost();
   }
