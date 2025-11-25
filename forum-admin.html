@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+  <title>Admin Forum Management</title>
+  <script>
+    const user = JSON.parse(localStorage.getItem("loggedInUser"));
+    if (!user || user.role !== "admin") {
+      window.location.href = "dashboard.html";
+    }
+  </script>
+</head>
+
+<body>
+  <header class="headerBox">
+    <button id="menu-toggle" class="menu-toggle">☰</button>
+    <div class="headerSpacer"></div>
+    <div class="headerTitle">
+      <h1>E-Learning SMP</h1>
+      <p>Admin Forum Management</p>
+    </div>
+    <div class="headerProfile">
+      <img src="assets/profile.png" class="thumb">
+    </div>
+  </header>
+
+  <nav id="nav-bar">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="admin-users.html">Kelola Pengguna</a>
+    <a href="forum-admin.html" class="select">Kelola Forum</a>
+    <a href="profil.html">Profil</a>
+  </nav>
+
+  <div class="container">
+    <div class="card">
+      <h2>🔧 Kelola Postingan Forum</h2>
+      <p>Filter dan kelola postingan forum berdasarkan kelas.</p>
+
+      <!-- Filter Controls -->
+      <div class="filter-controls" style="margin-bottom: 20px;">
+        <label for="classFilter">Filter berdasarkan Kelas:</label>
+        <select id="classFilter">
+          <option value="">Semua Kelas</option>
+          <option value="7A">7A</option>
+          <option value="7B">7B</option>
+          <option value="7C">7C</option>
+          <option value="8A">8A</option>
+          <option value="8B">8B</option>
+          <option value="8C">8C</option>
+          <option value="9A">9A</option>
+          <option value="9B">9B</option>
+          <option value="9C">9C</option>
+        </select>
+        
+        <button id="applyFilter" class="btn" style="margin-left: 10px;">Terapkan Filter</button>
+        <button id="refreshBtn" class="btn" style="margin-left: 10px;">🔄 Refresh</button>
+      </div>
+
+      <!-- Stats -->
+      <div id="forum-stats" class="card" style="background: var(--colorWhite2); margin-bottom: 20px;">
+        <h3>📊 Statistik Forum</h3>
+        <div id="stats-content">Memuat statistik...</div>
+      </div>
+
+      <!-- Posts List -->
+      <div class="card">
+        <h3>📝 Daftar Postingan</h3>
+        <div id="admin-posts-container">
+          Memuat postingan...
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="deleteModal" class="modal hidden">
+    <div class="modal-box">
+      <h3>Konfirmasi Hapus</h3>
+      <p id="deleteModalText">Apakah Anda yakin ingin menghapus postingan ini?</p>
+      <div style="margin-top: 20px;">
+        <button id="confirmDelete" class="btn danger">Ya, Hapus</button>
+        <button id="cancelDelete" class="btn cancel" style="margin-left: 10px;">Batal</button>
+      </div>
+      <div id="deleteStatus" style="margin-top: 10px;"></div>
+    </div>
+  </div>
+
+  <footer>
+    &copy; 2025 E-Learning SMP | Dikembangkan oleh Tim
+  </footer>
+
+  <script src="main.js"></script>
+</body>
+
+</html>

@@ -5,10 +5,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
-  <title>E-Learning SMP - Forum Diskusi</title>
+  <title>Forum Diskusi</title>
 </head>
 
 <body>
+
+  <!-- HEADER -->
   <header class="headerBox">
     <button id="menu-toggle" class="menu-toggle">☰</button>
     <div class="headerSpacer"></div>
@@ -21,6 +23,7 @@
     </div>
   </header>
 
+  <!-- NAV -->
   <nav id="nav-bar">
     <a href="dashboard.html">Dashboard</a>
     <a href="materi.html">Materi</a>
@@ -29,28 +32,48 @@
     <a href="profil.html">Profil</a>
   </nav>
 
+  <!-- CONTENT -->
   <div class="container">
-    <div class="card" id="forum-list">
-      <h2>💬 Diskusi Terbaru</h2>
-      <div id="post-container">Memuat...</div>
+
+    <!-- MAIN POST -->
+    <div class="card" id="post-box">
+      <h2>Memuat...</h2>
     </div>
 
+    <!-- REPLIES LIST -->
+    <div class="card">
+      <h3>Balasan</h3>
+      <div id="replies-box">Memuat...</div>
+    </div>
+
+    <!-- REPLY FORM -->
     <div class="card form-box">
-      <h2>Tulis Diskusi Baru</h2>
-      <form id="newPostForm">
-        <input id="newPostTitle" type="text" placeholder="Judul diskusi..." required>
-        <textarea id="newPostContent" rows="4" placeholder="Tulis pertanyaan di sini..." required></textarea>
+      <h3>Tulis Balasan</h3>
+      <form id="replyForm">
+        <textarea id="replyContent" rows="4" placeholder="Tulis balasan di sini..." required></textarea>
         <button type="submit" class="btn">Kirim</button>
       </form>
     </div>
 
   </div>
 
+  <!-- Delete Confirmation Modal -->
+  <div id="deleteModal" class="modal hidden">
+    <div class="modal-box">
+      <h3>Konfirmasi Hapus</h3>
+      <p id="deleteModalText">Apakah Anda yakin ingin menghapus postingan ini?</p>
+      <div style="margin-top: 20px;">
+        <button id="confirmDelete" class="btn danger">Ya, Hapus</button>
+        <button id="cancelDelete" class="btn cancel" style="margin-left: 10px;">Batal</button>
+      </div>
+      <div id="deleteStatus" style="margin-top: 10px;"></div>
+    </div>
+  </div>
+
   <footer>
     &copy; 2025 E-Learning SMP | Dikembangkan oleh Tim
   </footer>
 
-  <script src="dataSiswa.js"></script>
   <script src="main.js"></script>
 </body>
 
