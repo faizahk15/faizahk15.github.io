@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+  <title>E-Learning SMP - Buat Kuis</title>
+</head>
+<body>
+  <header class="headerBox">
+    <button id="menu-toggle" class="menu-toggle">☰</button>
+    <div class="headerSpacer"></div>
+    <div class="headerTitle">
+      <h1>E-Learning SMP</h1>
+      <p>Buat Kuis</p>
+    </div>
+    <div class="headerProfile">
+      <img src="assets/profile.png" class="thumb">
+    </div>
+  </header>
+
+  <nav id="nav-bar">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="guru-materi.html">Kelola Materi</a>
+    <a href="guru-quiz.html">Kelola Kuis</a>
+    <a href="forum.html">Forum</a>
+    <a href="profil.html">Profil</a>
+  </nav>
+
+  <div class="container">
+    <div class="card">
+      <h2>✏️ Buat Kuis Baru</h2>
+      <p id="teacher-class-info" style="margin-bottom: 15px; opacity: 0.8;"></p>
+      
+      <form id="quizForm">
+        <input type="hidden" id="quizId">
+        
+        <label>Judul Kuis:</label>
+        <input type="text" id="quizTitle" required>
+        
+        <label>Deskripsi:</label>
+        <textarea id="quizDescription" rows="3"></textarea>
+        
+        <label>Batas Waktu (menit):</label>
+        <input type="number" id="quizTimeLimit" value="30" min="1">
+        
+        <label>Maksimal Attempt:</label>
+        <input type="number" id="quizMaxAttempts" value="1" min="1">
+        
+        <label>Tersedia Dari:</label>
+        <input type="datetime-local" id="quizAvailableFrom">
+        
+        <label>Tersedia Sampai:</label>
+        <input type="datetime-local" id="quizAvailableUntil">
+        
+        <hr style="margin: 20px 0;">
+        
+        <h3>📝 Pertanyaan</h3>
+        <div id="questions-container">
+          <!-- Questions will be added here -->
+        </div>
+        
+        <button type="button" class="btn" onclick="addQuestion()" style="margin-bottom: 20px;">
+          + Tambah Pertanyaan
+        </button>
+        
+        <div style="display: flex; gap: 10px;">
+          <button type="submit" class="btn">Simpan Kuis</button>
+          <button type="button" class="btn cancel" onclick="window.location.href='guru-quiz.html'">
+            Kembali
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <footer>
+    &copy; 2025 E-Learning SMP | Dikembangkan oleh Tim
+  </footer>
+
+  <script src="main.js"></script>
+</body>
+</html>

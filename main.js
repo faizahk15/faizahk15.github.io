@@ -26,6 +26,7 @@ function applyRoleUI() {
       nav.innerHTML = `
         <a href="dashboard.html">Dashboard</a>
         <a href="guru-materi.html">Kelola Materi</a>
+        <a href="guru-quiz.html">Kelola Kuis</a>
         <a href="forum.html">Forum</a>
         <a href="profil.html">Profil</a>
       `;
@@ -316,7 +317,7 @@ async function initMateriDetailDB() {
   });
 }
 
-
+/*
 // Quiz page
 function initKuisPage() {
   const buttons = document.querySelectorAll('.card.subject .btn');
@@ -458,6 +459,1229 @@ function initKuisDetail() {
     }
   });
 }
+  */
+
+
+
+
+
+
+
+// ===== STUDENT QUIZ =====
+
+// Load available quizzes for student
+async function loadStudentQuizzes() {
+  const user = JSON.parse(localStorage.getItem("loggedInUser"));
+  if (!user || user.role !== "student") return;
+
+  const container = document.getElementById("quiz-list");
+  if (!container) return;
+
+  try {
+    container.innerHTML = "<p>Memuat kuis...</p>";
+
+    const res = await fetch(`${API}/quiz/student/${user.class}?user_id=${user.id_user}`);
+    const data = await res.json();
+
+    if (!data.success || data.quizzes.length === 0) {
+      container.innerHTML = "<p>Tidak ada kuis yang tersedia saat ini.</p>";
+      return;
+    }
+
+    container.innerHTML = "";
+    data.quizzes.forEach(quiz => {
+      const quizCard = document.createElement("div");
+      quizCard.className = "card";
+      
+      // Check if quiz is available
+      const now = new Date();
+      const availableFrom = quiz.available_from ? new Date(quiz.available_from) : null;
+      const availableUntil = quiz.available_until ? new Date(quiz.available_until) : null;
+      
+      const isAvailable = (!availableFrom || now >= availableFrom) && 
+                         (!availableUntil || now <= availableUntil);
+      
+      const attemptsMade = quiz.attempts_made || 0;
+      const attemptsLeft = Math.max(0, quiz.max_attempts - attemptsMade);
+      
+      quizCard.innerHTML = `
+        <h3>${quiz.title}</h3>
+        <p>${quiz.description || 'Tidak ada deskripsi'}</p>
+        <p><strong>Mata Pelajaran:</strong> ${quiz.subject_name}</p>
+        <p><strong>Waktu:</strong> ${quiz.time_limit} menit</p>
+        <p><strong>Status:</strong> 
+          <span class="attempt-status">
+            ${attemptsMade} dikerjakan, ${attemptsLeft} percobaan tersisa
+          </span>
+        </p>
+        ${availableFrom ? `<p><strong>Tersedia dari:</strong> ${new Date(quiz.available_from).toLocaleString('id-ID')}</p>` : ''}
+        ${availableUntil ? `<p><strong>Sampai:</strong> ${new Date(quiz.available_until).toLocaleString('id-ID')}</p>` : ''}
+        
+        <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+          ${isAvailable && attemptsLeft > 0 
+            ? `<button class="btn start-quiz" data-id="${quiz.id_quiz}">Mulai Kuis</button>` 
+            : `<button class="btn" disabled>${!isAvailable ? 'Belum Tersedia' : 'Tidak Ada Percobaan Lagi'}</button>`}
+          
+          ${attemptsMade > 0 
+            ? `<button class="btn view-results" data-id="${quiz.id_quiz}">Lihat Nilai</button>` 
+            : ''}
+        </div>
+      `;
+      
+      container.appendChild(quizCard);
+    });
+
+    // Use event delegation instead of individual event listeners
+    container.addEventListener('click', function(e) {
+      // Handle "Mulai Kuis" button clicks
+      if (e.target.classList.contains('start-quiz')) {
+        const quizId = e.target.getAttribute('data-id');
+        startQuiz(quizId);
+      }
+      
+      // Handle "Lihat Nilai" button clicks
+      if (e.target.classList.contains('view-results')) {
+        const quizId = e.target.getAttribute('data-id');
+        viewStudentQuizResults(quizId);
+      }
+    });
+
+  } catch (error) {
+    console.error("Error loading quizzes:", error);
+    container.innerHTML = "<p>Error memuat kuis.</p>";
+  }
+}
+
+// Start a quiz attempt
+async function startQuiz(quizId) {
+  const user = JSON.parse(localStorage.getItem("loggedInUser"));
+
+  try {
+    // Start attempt
+    const startRes = await fetch(`${API}/quiz/attempt/start`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id_quiz: quizId,
+        id_user: user.id_user
+      })
+    });
+
+    const startData = await startRes.json();
+
+    if (startData.success) {
+      // Redirect to quiz taking page
+      window.location.href = `kuis-take.html?id=${quizId}&attempt=${startData.id_attempt}`;
+    } else {
+      alert(startData.message || "Gagal memulai kuis");
+    }
+  } catch (error) {
+    console.error("Error starting quiz:", error);
+    alert("Error memulai kuis");
+  }
+}
+
+// View quiz results
+function viewStudentQuizResults(quizId) {
+  window.location.href = `kuis-nilai.html?quiz=${quizId}`;
+}
+
+// Load and display quiz for taking
+async function loadQuizForTaking() {
+  const params = new URLSearchParams(window.location.search);
+  const quizId = params.get("id");
+  const attemptId = params.get("attempt");
+
+  if (!quizId || !attemptId) {
+    window.location.href = "kuis.html";
+    return;
+  }
+
+  const user = JSON.parse(localStorage.getItem("loggedInUser"));
+  const container = document.getElementById("quiz-container");
+  const timerEl = document.getElementById("quiz-timer");
+
+  try {
+    // Get quiz data
+    const res = await fetch(`${API}/quiz/${quizId}`);
+    const data = await res.json();
+
+    if (!data.success) {
+      container.innerHTML = "<p>Kuis tidak ditemukan.</p>";
+      return;
+    }
+
+    const quiz = data.quiz;
+    const questions = data.questions;
+
+    // Display quiz info
+    document.getElementById("quiz-title").textContent = quiz.title;
+    document.getElementById("quiz-description").textContent = quiz.description || '';
+    document.getElementById("time-limit").textContent = quiz.time_limit;
+
+    // Build quiz form
+    const form = document.getElementById("quiz-form");
+    form.innerHTML = '';
+
+    questions.forEach((question, index) => {
+      const questionDiv = document.createElement("div");
+      questionDiv.className = "question-card";
+      questionDiv.innerHTML = `
+        <div class="question-header">
+          <h3>Pertanyaan ${index + 1}</h3>
+          <span class="points">(${question.points} poin)</span>
+        </div>
+        <p class="question-text">${question.question_text}</p>
+        <div class="question-options">
+          ${renderQuestionOptions(question, index)}
+        </div>
+      `;
+      form.appendChild(questionDiv);
+    });
+
+    // Add submit button
+    const submitDiv = document.createElement("div");
+    submitDiv.style.marginTop = "20px";
+    submitDiv.innerHTML = `
+      <button type="submit" class="btn">Submit Jawaban</button>
+      <button type="button" id="save-draft" class="btn" style="margin-left: 10px;">Simpan Draft</button>
+    `;
+    form.appendChild(submitDiv);
+
+    // Start timer if time limit exists
+    if (quiz.time_limit > 0) {
+      startTimer(quiz.time_limit, timerEl, form);
+    }
+
+    // Form submission
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      await submitQuiz(quizId, attemptId, questions);
+    });
+
+    // Save draft functionality
+    document.getElementById("save-draft").addEventListener("click", () => {
+      saveDraft(quizId, attemptId, questions);
+    });
+
+    // Load draft if exists
+    loadDraft(form);
+
+  } catch (error) {
+    console.error("Error loading quiz:", error);
+    container.innerHTML = "<p>Error memuat kuis.</p>";
+  }
+}
+
+// Render question options based on type
+function renderQuestionOptions(question, index) {
+  if (question.question_type === 'essay') {
+    return `
+      <textarea name="q${index}" data-question-id="${question.id_question}" 
+                placeholder="Tulis jawaban Anda di sini..." 
+                rows="4" style="width: 100%; padding: 8px;"></textarea>
+    `;
+  } else {
+    // Multiple choice or true/false
+    return question.options.map((option, optIndex) => `
+      <label style="display: block; margin: 8px 0; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+        <input type="radio" name="q${index}" value="${option.id_option}" 
+               data-question-id="${question.id_question}">
+        <span style="margin-left: 8px;">${option.option_text}</span>
+      </label>
+    `).join('');
+  }
+}
+
+// Timer functionality
+function startTimer(minutes, timerEl, form) {
+  let timeLeft = minutes * 60;
+
+  const timer = setInterval(() => {
+    const minutes = Math.floor(timeLeft / 60);
+    const seconds = timeLeft % 60;
+
+    timerEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+    if (timeLeft <= 0) {
+      clearInterval(timer);
+      timerEl.innerHTML = '<span style="color: red;">Waktu Habis!</span>';
+      alert("Waktu sudah habis! Mengirim jawaban secara otomatis...");
+      form.dispatchEvent(new Event('submit'));
+    }
+
+    timeLeft--;
+
+    // Warning when 5 minutes left
+    if (timeLeft === 300) {
+      timerEl.style.color = "orange";
+      alert("Sisa waktu 5 menit!");
+    }
+
+    // Critical when 1 minute left
+    if (timeLeft === 60) {
+      timerEl.style.color = "red";
+    }
+  }, 1000);
+}
+
+// Submit quiz answers
+async function submitQuiz(quizId, attemptId, questions) {
+  const form = document.getElementById("quiz-form");
+  const answers = [];
+
+  // Collect answers
+  questions.forEach((question, index) => {
+    const input = form.querySelector(`[name="q${index}"]`);
+
+    if (question.question_type === 'essay') {
+      if (input && input.value.trim()) {
+        answers.push({
+          id_question: question.id_question,
+          answer_text: input.value.trim()
+        });
+      }
+    } else {
+      const selectedOption = form.querySelector(`[name="q${index}"]:checked`);
+      if (selectedOption) {
+        answers.push({
+          id_question: question.id_question,
+          id_option: selectedOption.value
+        });
+      }
+    }
+  });
+
+  try {
+    const submitRes = await fetch(`${API}/quiz/attempt/submit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id_attempt: attemptId,
+        answers: answers
+      })
+    });
+
+    const submitData = await submitRes.json();
+
+    if (submitData.success) {
+      // Clear draft
+      localStorage.removeItem(`quiz_draft_${quizId}_${attemptId}`);
+
+      // Redirect to results page
+      window.location.href = `kuis-result.html?attempt=${attemptId}`;
+    } else {
+      alert("Gagal mengirim jawaban: " + (submitData.error || "Unknown error"));
+    }
+  } catch (error) {
+    console.error("Error submitting quiz:", error);
+    alert("Error mengirim jawaban");
+  }
+}
+
+// Save draft locally
+function saveDraft(quizId, attemptId, questions) {
+  const form = document.getElementById("quiz-form");
+  const draft = {};
+
+  questions.forEach((question, index) => {
+    const input = form.querySelector(`[name="q${index}"]`);
+    if (input) {
+      if (question.question_type === 'essay') {
+        draft[`q${index}`] = input.value;
+      } else {
+        const selectedOption = form.querySelector(`[name="q${index}"]:checked`);
+        draft[`q${index}`] = selectedOption ? selectedOption.value : '';
+      }
+    }
+  });
+
+  localStorage.setItem(`quiz_draft_${quizId}_${attemptId}`, JSON.stringify(draft));
+  alert("Draft berhasil disimpan!");
+}
+
+// Load draft
+function loadDraft(form) {
+  const params = new URLSearchParams(window.location.search);
+  const quizId = params.get("id");
+  const attemptId = params.get("attempt");
+
+  const draft = localStorage.getItem(`quiz_draft_${quizId}_${attemptId}`);
+  if (draft) {
+    const draftData = JSON.parse(draft);
+
+    Object.keys(draftData).forEach(key => {
+      const input = form.querySelector(`[name="${key}"]`);
+      if (input) {
+        if (input.type === 'textarea') {
+          input.value = draftData[key];
+        } else if (input.type === 'radio') {
+          const radioToCheck = form.querySelector(`[name="${key}"][value="${draftData[key]}"]`);
+          if (radioToCheck) {
+            radioToCheck.checked = true;
+          }
+        }
+      }
+    });
+
+    console.log("Draft loaded successfully");
+  }
+}
+
+// Display quiz results
+async function displayQuizResults() {
+  const params = new URLSearchParams(window.location.search);
+  const attemptId = params.get("attempt");
+
+  if (!attemptId) {
+    window.location.href = "kuis.html";
+    return;
+  }
+
+  const container = document.getElementById("quiz-result");
+
+  try {
+    // In a real implementation, you'd fetch attempt details from API
+    // For now, we'll show a simple result page
+
+    container.innerHTML = `
+      <div class="card">
+        <h2>Kuis Selesai!</h2>
+        <p>Jawaban Anda telah berhasil dikirim.</p>
+        <p>Guru akan memeriksa jawaban essay dan nilai akhir akan tersedia kemudian.</p>
+        <div style="margin-top: 20px;">
+          <a href="kuis.html" class="btn">Kembali ke Daftar Kuis</a>
+          <a href="dashboard.html" class="btn" style="margin-left: 10px;">Kembali ke Dashboard</a>
+        </div>
+      </div>
+    `;
+
+  } catch (error) {
+    console.error("Error displaying results:", error);
+    container.innerHTML = "<p>Error memuat hasil kuis.</p>";
+  }
+}
+
+// Load student's quiz grades
+async function loadStudentGrades() {
+  const user = JSON.parse(localStorage.getItem("loggedInUser"));
+  const container = document.getElementById("grades-container");
+  const noGrades = document.getElementById("no-grades");
+
+  if (!container) return;
+
+  try {
+    container.innerHTML = "<p>Memuat nilai...</p>";
+
+    const res = await fetch(`${API}/quiz/grades/${user.id_user}`);
+    const data = await res.json();
+
+    if (!data.success || data.grades.length === 0) {
+      container.innerHTML = "";
+      noGrades.style.display = "block";
+      return;
+    }
+
+    container.innerHTML = "";
+    noGrades.style.display = "none";
+
+    // Filter by specific quiz if provided
+    const params = new URLSearchParams(window.location.search);
+    const filterQuizId = params.get("quiz");
+
+    let filteredGrades = data.grades;
+    if (filterQuizId) {
+      filteredGrades = data.grades.filter(grade => grade.id_quiz == filterQuizId);
+
+      if (filteredGrades.length === 0) {
+        container.innerHTML = `
+          <div class="card">
+            <h3>Belum Ada Nilai untuk Kuis Ini</h3>
+            <p>Anda belum mengerjakan kuis ini atau nilai belum tersedia.</p>
+            <a href="kuis.html" class="btn">Kembali ke Daftar Kuis</a>
+          </div>
+        `;
+        return;
+      }
+    }
+
+    // Group by quiz
+    const gradesByQuiz = {};
+    filteredGrades.forEach(grade => {
+      if (!gradesByQuiz[grade.id_quiz]) {
+        gradesByQuiz[grade.id_quiz] = {
+          quiz_title: grade.quiz_title,
+          subject_name: grade.subject_name,
+          attempts: []
+        };
+      }
+      gradesByQuiz[grade.id_quiz].attempts.push(grade);
+    });
+
+    // Display grades
+    Object.values(gradesByQuiz).forEach(quizData => {
+      const quizCard = document.createElement("div");
+      quizCard.className = "card grade-card";
+
+      quizCard.innerHTML = `
+        <div class="quiz-header">
+          <h3>${quizData.quiz_title}</h3>
+          <span class="subject-badge">${quizData.subject_name}</span>
+        </div>
+        <div class="attempts-list">
+          ${quizData.attempts.map(attempt => `
+            <div class="attempt-item">
+              <div class="attempt-info">
+                <strong>Percobaan ${attempt.attempt_number}</strong>
+                <span class="attempt-date">${new Date(attempt.submitted_at).toLocaleString('id-ID')}</span>
+              </div>
+              <div class="attempt-score">
+                <span class="score">${attempt.score}/${attempt.max_score}</span>
+                <span class="percentage ${getScoreColor(attempt.percentage)}">${attempt.percentage}%</span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+
+      container.appendChild(quizCard);
+    });
+
+  } catch (error) {
+    console.error("Error loading grades:", error);
+    container.innerHTML = "<p>Error memuat nilai. Silakan refresh halaman.</p>";
+  }
+}
+
+// Get color based on score percentage
+function getScoreColor(percentage) {
+  if (percentage >= 80) return "score-excellent";
+  if (percentage >= 70) return "score-good";
+  if (percentage >= 60) return "score-average";
+  return "score-poor";
+}
+
+// Load detailed quiz attempt
+async function loadQuizAttemptDetail() {
+  const params = new URLSearchParams(window.location.search);
+  const attemptId = params.get("attempt");
+
+  if (!attemptId) {
+    window.location.href = "kuis-nilai.html";
+    return;
+  }
+
+  const container = document.getElementById("attempt-detail");
+  if (!container) return;
+
+  try {
+    // In a real implementation, you'd fetch attempt details from API
+    // For now, we'll show a simplified version
+    container.innerHTML = `
+      <div class="card">
+        <h2>Detail Percobaan Kuis</h2>
+        <p>Fitur detail percobaan kuis sedang dalam pengembangan.</p>
+        <a href="kuis-nilai.html" class="btn">Kembali ke Daftar Nilai</a>
+      </div>
+    `;
+
+  } catch (error) {
+    console.error("Error loading attempt detail:", error);
+    container.innerHTML = "<p>Error memuat detail percobaan.</p>";
+  }
+}
+
+
+
+
+
+
+
+
+// ===== TEACHER QUIZ MANAGEMENT =====
+
+// Global variables
+let currentEditingQuizId = null;
+
+
+
+// Setup create quiz form in guru-quiz.html
+function setupCreateQuizForm() {
+  const createForm = document.getElementById("createQuizForm");
+  if (!createForm) return;
+
+  createForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const user = JSON.parse(localStorage.getItem("loggedInUser"));
+    if (!user) return;
+
+    // Get form data
+    const quizData = {
+      title: document.getElementById("quizTitle").value.trim(),
+      description: document.getElementById("quizDescription").value.trim(),
+      time_limit: parseInt(document.getElementById("quizTimeLimit").value) || 30,
+      max_attempts: parseInt(document.getElementById("quizMaxAttempts").value) || 1,
+      available_from: document.getElementById("quizAvailableFrom").value || null,
+      available_until: document.getElementById("quizAvailableUntil").value || null,
+      questions: [] // Empty questions for now - they'll be added in the detailed editor
+    };
+
+    // Validate required fields
+    if (!quizData.title) {
+      alert("Judul kuis harus diisi");
+      return;
+    }
+
+    try {
+      // Show loading state
+      const submitBtn = createForm.querySelector('button[type="submit"]');
+      const originalText = submitBtn.textContent;
+      submitBtn.textContent = "Membuat...";
+      submitBtn.disabled = true;
+
+      // Create the quiz
+      const result = await createNewQuiz(quizData);
+
+      if (result.success) {
+        alert("Kuis berhasil dibuat! Sekarang tambahkan pertanyaan.");
+        closeCreateQuizModal();
+        // Redirect to quiz editor to add questions
+        window.location.href = `guru-quiz-create.html?edit=${result.id_quiz}`;
+      } else {
+        alert("Gagal membuat kuis: " + (result.error || "Unknown error"));
+      }
+
+      // Restore button state
+      submitBtn.textContent = originalText;
+      submitBtn.disabled = false;
+
+    } catch (error) {
+      console.error("Error creating quiz:", error);
+      alert("Error membuat kuis");
+
+      // Restore button state
+      const submitBtn = createForm.querySelector('button[type="submit"]');
+      submitBtn.textContent = "Buat Kuis";
+      submitBtn.disabled = false;
+    }
+  });
+}
+
+
+// Enhanced quickCreateQuiz function that preserves data
+async function quickCreateQuiz(quizData) {
+  const user = JSON.parse(localStorage.getItem("loggedInUser"));
+
+  try {
+    // Get teacher's subject
+    const resMapel = await fetch(`${API}/teacher/mapel/${user.id_user}`);
+    const mapelData = await resMapel.json();
+
+    if (!mapelData.success || !mapelData.mapel) {
+      return { success: false, error: "Guru tidak memiliki mapel yang ditugaskan" };
+    }
+
+    const res = await fetch(`${API}/teacher/quiz/quick-create`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...quizData,
+        teacher_id: user.id_user,
+        id_mapel: mapelData.mapel.id_mapel
+      })
+    });
+
+    const data = await res.json();
+
+    // Store quiz data in localStorage for the editor page
+    if (data.success) {
+      localStorage.setItem('pendingQuizData', JSON.stringify({
+        ...quizData,
+        id_quiz: data.id_quiz
+      }));
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Error creating quiz:", error);
+    return { success: false, error: "Gagal membuat kuis" };
+  }
+}
+
+
+// Load pending quiz data in editor
+function loadPendingQuizData() {
+  const pendingData = localStorage.getItem('pendingQuizData');
+  if (!pendingData) return null;
+
+  const quizData = JSON.parse(pendingData);
+
+  // Fill the form fields
+  document.getElementById('quizId').value = quizData.id_quiz;
+  document.getElementById('quizTitle').value = quizData.title;
+  document.getElementById('quizDescription').value = quizData.description || '';
+  document.getElementById('quizTimeLimit').value = quizData.time_limit || 30;
+  document.getElementById('quizMaxAttempts').value = quizData.max_attempts || 1;
+
+  if (quizData.available_from) {
+    document.getElementById('quizAvailableFrom').value = quizData.available_from;
+  }
+  if (quizData.available_until) {
+    document.getElementById('quizAvailableUntil').value = quizData.available_until;
+  }
+
+  return quizData;
+}
+
+// Clear pending quiz data after successful save
+function clearPendingQuizData() {
+  localStorage.removeItem('pendingQuizData');
+}
+
+
+
+
+// Enhanced quiz form submission for guru-quiz-create.html
+function setupQuizEditorForm() {
+  const quizForm = document.getElementById("quizForm");
+  if (!quizForm) return;
+
+  // Load any pending quiz data first
+  const pendingData = loadPendingQuizData();
+
+  quizForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const user = JSON.parse(localStorage.getItem("loggedInUser"));
+    if (!user) return;
+
+    // Collect all questions
+    const questions = collectQuestions();
+
+    if (questions.length === 0) {
+      alert("Tambahkan setidaknya satu pertanyaan sebelum menyimpan!");
+      return;
+    }
+
+    const quizData = {
+      id_quiz: document.getElementById("quizId").value,
+      title: document.getElementById("quizTitle").value.trim(),
+      description: document.getElementById("quizDescription").value.trim(),
+      time_limit: parseInt(document.getElementById("quizTimeLimit").value) || 30,
+      max_attempts: parseInt(document.getElementById("quizMaxAttempts").value) || 1,
+      available_from: document.getElementById("quizAvailableFrom").value || null,
+      available_until: document.getElementById("quizAvailableUntil").value || null,
+      questions: questions
+    };
+
+    try {
+      // Show loading state
+      const submitBtn = quizForm.querySelector('button[type="submit"]');
+      const originalText = submitBtn.textContent;
+      submitBtn.textContent = "Menyimpan...";
+      submitBtn.disabled = true;
+
+      // Save the quiz with questions
+      const result = await saveQuizWithQuestions(quizData);
+
+      if (result.success) {
+        alert("Kuis berhasil disimpan dengan " + questions.length + " pertanyaan!");
+        clearPendingQuizData(); // Clear the stored data
+        // Redirect back to main quiz page
+        window.location.href = "guru-quiz.html";
+      } else {
+        alert("Gagal menyimpan kuis: " + (result.error || "Unknown error"));
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+      }
+
+    } catch (error) {
+      console.error("Error saving quiz:", error);
+      alert("Error menyimpan kuis");
+
+      const submitBtn = quizForm.querySelector('button[type="submit"]');
+      submitBtn.textContent = "Simpan Kuis";
+      submitBtn.disabled = false;
+    }
+  });
+}
+
+// Collect all questions from the form
+function collectQuestions() {
+  const questions = [];
+  const questionCards = document.querySelectorAll('.question-card');
+
+  questionCards.forEach((card, index) => {
+    const questionText = card.querySelector('.question-text').value.trim();
+    const questionType = card.querySelector('.question-type').value;
+    const points = parseInt(card.querySelector('.question-points').value) || 1;
+
+    if (!questionText) return; // Skip empty questions
+
+    const question = {
+      question_text: questionText,
+      question_type: questionType,
+      points: points,
+      sort_order: index,
+      options: []
+    };
+
+    // Collect options for multiple choice questions
+    if (questionType !== 'essay') {
+      const optionInputs = card.querySelectorAll('.option-text');
+      const correctRadios = card.querySelectorAll('.correct-option');
+
+      optionInputs.forEach((input, optIndex) => {
+        const optionText = input.value.trim();
+        if (!optionText) return; // Skip empty options
+
+        const isCorrect = correctRadios[optIndex]?.checked || false;
+
+        question.options.push({
+          option_text: optionText,
+          is_correct: isCorrect,
+          sort_order: optIndex
+        });
+      });
+
+      // Validate that at least one option is marked correct for multiple choice
+      if (questionType === 'multiple_choice' && !question.options.some(opt => opt.is_correct)) {
+        alert(`Pertanyaan "${questionText.substring(0, 50)}..." harus memiliki jawaban yang benar!`);
+        throw new Error("No correct answer selected");
+      }
+    }
+
+    questions.push(question);
+  });
+
+  return questions;
+}
+
+// Save quiz with questions
+async function saveQuizWithQuestions(quizData) {
+  try {
+    const res = await fetch(`${API}/teacher/quiz/save-with-questions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(quizData)
+    });
+
+    const data = await res.json();
+    return data;
+  } catch (error) {
+    console.error("Error saving quiz with questions:", error);
+    return { success: false, error: "Gagal menyimpan kuis" };
+  }
+}
+
+// Function to load existing quiz for editing
+async function loadQuizForEditing(quizId) {
+  try {
+    const res = await fetch(`${API}/teacher/quiz/${quizId}`);
+    const data = await res.json();
+
+    if (data.success) {
+      // Fill basic quiz info
+      document.getElementById('quizId').value = data.quiz.id_quiz;
+      document.getElementById('quizTitle').value = data.quiz.title;
+      document.getElementById('quizDescription').value = data.quiz.description || '';
+      document.getElementById('quizTimeLimit').value = data.quiz.time_limit;
+      document.getElementById('quizMaxAttempts').value = data.quiz.max_attempts;
+
+      if (data.quiz.available_from) {
+        document.getElementById('quizAvailableFrom').value = data.quiz.available_from.replace(' ', 'T');
+      }
+      if (data.quiz.available_until) {
+        document.getElementById('quizAvailableUntil').value = data.quiz.available_until.replace(' ', 'T');
+      }
+
+      // Clear existing questions and load new ones
+      const questionsContainer = document.getElementById("questions-container");
+      questionsContainer.innerHTML = '';
+
+      data.questions.forEach(question => {
+        addQuestion(question);
+      });
+    }
+  } catch (error) {
+    console.error("Error loading quiz for editing:", error);
+  }
+}
+
+
+// Helper function to escape HTML (add to main.js)
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// Load teacher's quizzes
+async function loadTeacherQuizzes() {
+  const user = JSON.parse(localStorage.getItem("loggedInUser"));
+  if (!user || user.role !== "teacher") return;
+
+  try {
+    const res = await fetch(`${API}/teacher/quizzes/${user.id_user}`);
+    const data = await res.json();
+
+    const quizList = document.getElementById("quiz-list");
+    if (!quizList) return;
+
+    if (!data.success || data.quizzes.length === 0) {
+      quizList.innerHTML = '<p>Belum ada kuis. Buat kuis pertama Anda!</p>';
+      return;
+    }
+
+    quizList.innerHTML = '';
+    data.quizzes.forEach(quiz => {
+      const quizDiv = document.createElement("div");
+      quizDiv.className = "card";
+      quizDiv.style.marginBottom = "15px";
+
+      const attemptsText = quiz.total_attempts > 0 ?
+        `• ${quiz.total_attempts} attempt` :
+        '• Belum ada percobaan';
+
+      quizDiv.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: start;">
+          <div>
+            <h3 style="margin: 0 0 8px 0;">${quiz.title}</h3>
+            <p style="margin: 0 0 8px 0; opacity: 0.8;">${quiz.description || 'Tidak ada deskripsi'}</p>
+            <p style="margin: 0; font-size: 0.9em; opacity: 0.7;">
+              ${quiz.subject_name} • ${quiz.time_limit} menit • ${quiz.max_attempts} percobaan maksimal
+              ${attemptsText}
+            </p>
+            <p style="margin: 8px 0 0 0; font-size: 0.9em;">
+              ${quiz.available_from ? `Tersedia: ${new Date(quiz.available_from).toLocaleString('id-ID')}` : ''}
+              ${quiz.available_until ? `Sampai: ${new Date(quiz.available_until).toLocaleString('id-ID')}` : ''}
+            </p>
+          </div>
+          <div style="display: flex; gap: 8px; flex-direction: column;">
+            <button class="btn small" onclick="editQuiz(${quiz.id_quiz})">Edit</button>
+            <button class="btn small" onclick="viewQuizResults(${quiz.id_quiz})">Lihat Hasil</button>
+            <button class="btn small danger" onclick="deleteQuiz(${quiz.id_quiz}, '${escapeHtml(quiz.title)}')">Hapus</button>
+          </div>
+        </div>
+      `;
+
+      quizList.appendChild(quizDiv);
+    });
+
+  } catch (error) {
+    console.error("Error loading quizzes:", error);
+    document.getElementById("quiz-list").innerHTML = '<p>Error memuat kuis.</p>';
+  }
+}
+
+// Enhanced createNewQuiz function
+async function createNewQuiz(quizData) {
+  const user = JSON.parse(localStorage.getItem("loggedInUser"));
+
+  try {
+    const res = await fetch(`${API}/teacher/quiz/create`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...quizData,
+        teacher_id: user.id_user
+      })
+    });
+
+    const data = await res.json();
+    return data;
+  } catch (error) {
+    console.error("Error creating quiz:", error);
+    return { success: false, error: "Gagal membuat kuis" };
+  }
+}
+
+// Add question to quiz form
+function addQuestion(questionData = null) {
+  const container = document.getElementById("questions-container");
+  const questionId = Date.now(); // Temporary ID
+
+  const questionDiv = document.createElement("div");
+  questionDiv.className = "question-card";
+  questionDiv.style.border = "1px solid #ddd";
+  questionDiv.style.padding = "15px";
+  questionDiv.style.marginBottom = "15px";
+  questionDiv.style.borderRadius = "8px";
+
+  questionDiv.innerHTML = `
+    <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 10px;">
+      <h4 style="margin: 0;">Pertanyaan</h4>
+      <button type="button" class="btn small danger" onclick="this.parentElement.parentElement.remove()">
+        Hapus
+      </button>
+    </div>
+    
+    <label>Teks Pertanyaan:</label>
+    <textarea class="question-text" rows="3" required 
+      placeholder="Masukkan pertanyaan...">${questionData?.question_text || ''}</textarea>
+    
+    <label>Tipe Pertanyaan:</label>
+    <select class="question-type" onchange="toggleQuestionOptions(this)">
+      <option value="multiple_choice" ${(questionData?.question_type || 'multiple_choice') === 'multiple_choice' ? 'selected' : ''}>
+        Pilihan Ganda
+      </option>
+      <option value="true_false" ${questionData?.question_type === 'true_false' ? 'selected' : ''}>
+        Benar/Salah
+      </option>
+      <option value="essay" ${questionData?.question_type === 'essay' ? 'selected' : ''}>
+        Essay
+      </option>
+    </select>
+    
+    <label>Poin:</label>
+    <input type="number" class="question-points" value="${questionData?.points || 1}" min="1">
+    
+    <div class="options-container" style="margin-top: 15px; ${questionData?.question_type === 'essay' ? 'display: none;' : ''}">
+      <label>Pilihan Jawaban:</label>
+      <div class="options-list">
+        ${renderOptions(questionData?.options || [])}
+      </div>
+      <button type="button" class="btn small" onclick="addOption(this)" style="margin-top: 8px;">
+        + Tambah Pilihan
+      </button>
+    </div>
+  `;
+
+  container.appendChild(questionDiv);
+}
+
+// Render options for multiple choice
+function renderOptions(options) {
+  if (options.length === 0) {
+    return `
+      <div class="option-row">
+        <input type="text" class="option-text" placeholder="Pilihan A" required>
+        <label style="display: inline-flex; align-items: center; margin-left: 10px;">
+          <input type="radio" class="correct-option" name="correct_${Date.now()}" value="0">
+          <span style="margin-left: 5px;">Benar</span>
+        </label>
+      </div>
+    `;
+  }
+
+  return options.map((option, index) => `
+    <div class="option-row">
+      <input type="text" class="option-text" value="${option.option_text}" required>
+      <label style="display: inline-flex; align-items: center; margin-left: 10px;">
+        <input type="radio" class="correct-option" name="correct_${Date.now()}" value="${index}" 
+          ${option.is_correct ? 'checked' : ''}>
+        <span style="margin-left: 5px;">Benar</span>
+      </label>
+      ${index > 0 ? `<button type="button" class="btn small danger" onclick="removeOption(this)" style="margin-left: 10px;">Hapus</button>` : ''}
+    </div>
+  `).join('');
+}
+
+// Add option to question
+function addOption(button) {
+  const optionsList = button.previousElementSibling;
+  const optionRow = document.createElement("div");
+  optionRow.className = "option-row";
+  optionRow.style.marginBottom = "8px";
+
+  optionRow.innerHTML = `
+    <input type="text" class="option-text" placeholder="Pilihan baru" required>
+    <label style="display: inline-flex; align-items: center; margin-left: 10px;">
+      <input type="radio" class="correct-option" name="${button.closest('.question-card').querySelector('.correct-option').name}" value="${optionsList.children.length}">
+      <span style="margin-left: 5px;">Benar</span>
+    </label>
+    <button type="button" class="btn small danger" onclick="removeOption(this)" style="margin-left: 10px;">Hapus</button>
+  `;
+
+  optionsList.appendChild(optionRow);
+}
+
+// Remove option
+function removeOption(button) {
+  button.closest('.option-row').remove();
+}
+
+// Toggle options based on question type
+function toggleQuestionOptions(select) {
+  const optionsContainer = select.closest('.question-card').querySelector('.options-container');
+  optionsContainer.style.display = select.value === 'essay' ? 'none' : 'block';
+}
+
+// Open create quiz modal
+function openCreateQuizModal() {
+  document.getElementById("createQuizModal").classList.remove("hidden");
+}
+
+// Close create quiz modal
+function closeCreateQuizModal() {
+  document.getElementById("createQuizModal").classList.add("hidden");
+  document.getElementById("createQuizForm").reset();
+}
+
+// Edit quiz
+function editQuiz(quizId) {
+  window.location.href = `guru-quiz-create.html?edit=${quizId}`;
+}
+
+// View quiz results
+function viewQuizResults(quizId) {
+  window.location.href = `guru-quiz-results.html?id=${quizId}`;
+}
+
+// Enhanced delete quiz function
+async function deleteQuiz(quizId, quizTitle = '') {
+  try {
+    // Show basic confirmation first
+    const basicConfirm = confirm(`Hapus kuis "${quizTitle}"?`);
+    if (!basicConfirm) return;
+
+    // Show loading state immediately
+    const deleteBtn = event.target;
+    const originalText = deleteBtn.textContent;
+    deleteBtn.textContent = "Mengecek...";
+    deleteBtn.disabled = true;
+
+    // Get statistics for detailed confirmation
+    let statsData;
+    try {
+      const statsRes = await fetch(`${API}/teacher/quiz/statistics/${quizId}`);
+      statsData = await statsRes.json();
+    } catch (statsError) {
+      console.warn("Could not fetch statistics:", statsError);
+      // Continue with deletion even if stats fail
+    }
+
+    // If we have statistics and there are attempts, show detailed confirmation
+    if (statsData && statsData.success && statsData.statistics.total_attempts > 0) {
+      const stats = statsData.statistics;
+      
+      const detailedMessage = 
+        `HAPUS KUIS: "${stats.title}"\n\n` +
+        `📊 STATISTIK:\n` +
+        `• ${stats.total_attempts} total percobaan\n` +
+        `• ${stats.total_students} siswa telah mengerjakan\n` +
+        `• Nilai rata-rata: ${stats.average_score}%\n` +
+        `• Nilai tertinggi: ${stats.highest_score}%\n\n` +
+        `⚠️  PERINGATAN:\n` +
+        `• Semua data percobaan akan dihapus permanen\n` +
+        `• Nilai siswa untuk kuis ini akan hilang\n` +
+        `• Tindakan ini TIDAK DAPAT DIBATALKAN\n\n` +
+        `Yakin ingin menghapus?`;
+
+      deleteBtn.textContent = "Menunggu...";
+      
+      if (!confirm(detailedMessage)) {
+        deleteBtn.textContent = originalText;
+        deleteBtn.disabled = false;
+        return;
+      }
+    }
+
+    // Proceed with deletion
+    deleteBtn.textContent = "Menghapus...";
+
+    const res = await fetch(`${API}/teacher/quiz/delete/${quizId}`, {
+      method: "DELETE"
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      let successMessage = `✅ Kuis "${quizTitle}" berhasil dihapus.`;
+      
+      if (data.deleted) {
+        const d = data.deleted;
+        if (d.attempts > 0) {
+          successMessage += `\n\nData yang dihapus:\n` +
+            `• ${d.attempts} percobaan siswa\n` +
+            `• ${d.questions} pertanyaan\n` +
+            `• ${d.answers} jawaban siswa`;
+        }
+      }
+      
+      alert(successMessage);
+      loadTeacherQuizzes();
+    } else {
+      alert("❌ Gagal menghapus kuis: " + data.error);
+      deleteBtn.textContent = originalText;
+      deleteBtn.disabled = false;
+    }
+
+  } catch (error) {
+    console.error("Error deleting quiz:", error);
+    alert("❌ Error menghapus kuis. Silakan coba lagi.");
+    
+    const deleteBtn = event.target;
+    deleteBtn.textContent = "Hapus";
+    deleteBtn.disabled = false;
+  }
+}
+
+// Load quiz results
+async function loadQuizResults() {
+  const params = new URLSearchParams(window.location.search);
+  const quizId = params.get("id");
+
+  if (!quizId) {
+    window.location.href = "guru-quiz.html";
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API}/teacher/quiz/results/${quizId}`);
+    const data = await res.json();
+
+    if (!data.success) {
+      alert("Gagal memuat hasil kuis");
+      return;
+    }
+
+    // Display quiz info
+    document.getElementById("quiz-title").textContent = data.quiz.title;
+    document.getElementById("quiz-info").textContent =
+      `${data.quiz.subject_name} • ${data.quiz.total_attempts} percobaan • Rata-rata: ${data.quiz.average_score || 0}%`;
+
+    // Display results table
+    const resultsTable = document.getElementById("results-table");
+    resultsTable.innerHTML = '';
+
+    data.attempts.forEach(attempt => {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${attempt.real_name}</td>
+        <td>${attempt.class}</td>
+        <td>${attempt.attempt_number}</td>
+        <td>${attempt.score}/${attempt.max_score}</td>
+        <td>${Math.round((attempt.score / attempt.max_score) * 100)}%</td>
+        <td>${new Date(attempt.submitted_at).toLocaleString('id-ID')}</td>
+        <td>
+          <button class="btn small" onclick="viewAttemptDetails(${attempt.id_attempt})">
+            Detail
+          </button>
+        </td>
+      `;
+      resultsTable.appendChild(row);
+    });
+
+    // Display analytics
+    const analyticsDiv = document.getElementById("quiz-analytics");
+    analyticsDiv.innerHTML = `
+      <p><strong>Total Percobaan:</strong> ${data.quiz.total_attempts}</p>
+      <p><strong>Skor Tertinggi:</strong> ${data.quiz.highest_score || 0}%</p>
+      <p><strong>Skor Terendah:</strong> ${data.quiz.lowest_score || 0}%</p>
+      <p><strong>Rata-rata Skor:</strong> ${data.quiz.average_score || 0}%</p>
+    `;
+
+  } catch (error) {
+    console.error("Error loading quiz results:", error);
+  }
+}
+
+// View attempt details
+function viewAttemptDetails(attemptId) {
+  window.location.href = `guru-quiz-attempt.html?id=${attemptId}`;
+}
 
 
 
@@ -503,15 +1727,15 @@ async function loadForumPosts() {
 function updateForumClassBadge() {
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
   if (!user) return;
-  
+
   const classBadge = document.getElementById("user-class-badge");
   const forumDescription = document.getElementById("forum-description");
-  
+
   if (classBadge) {
     classBadge.textContent = user.class;
     classBadge.classList.add("class-badge");
   }
-  
+
   if (forumDescription) {
     forumDescription.textContent = `Diskusi untuk siswa kelas ${user.class}. Hanya postingan dari kelas ${user.class} yang ditampilkan.`;
   }
@@ -1576,7 +2800,71 @@ document.addEventListener('DOMContentLoaded', () => {
   else if (path.endsWith('materi.html')) initMateriPageDB();
   else if (path.endsWith('materi-detail.html')) initMateriDetailDB();
 
-  else if (path.endsWith('kuis.html')) initKuisPage();
-  else if (path.endsWith('kuis-detail.html')) initKuisDetail();
+  // else if (path.endsWith('kuis.html')) initKuisPage();
+  // else if (path.endsWith('kuis-detail.html')) initKuisDetail();
+
+  // In your existing DOMContentLoaded event listener in main.js, add:
+  // In your existing DOMContentLoaded event listener in main.js, add:
+  else if (path.endsWith('kuis.html')) {
+    loadStudentQuizzes();
+  }
+  else if (path.endsWith('kuis-nilai.html')) {
+    loadStudentGrades();
+  }
+  else if (path.endsWith('kuis-take.html')) {
+    // Quiz taking page - handled by inline script
+  }
+  else if (path.endsWith('kuis-result.html')) {
+    // Quiz result page - handled by inline script
+  }
+  else if (path.endsWith('nilai.html')) { // If you create a grades page
+    loadStudentGrades();
+  }
+
+  else if (path.endsWith('guru-quiz.html')) {
+    showTeacherClassAndMapel();
+    loadTeacherQuizzes();
+    setupCreateQuizForm();
+
+    // Setup create quiz form
+    const createForm = document.getElementById("createQuizForm");
+    if (createForm) {
+      createForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        // Implementation for quick create modal
+      });
+    }
+  }
+
+  else if (path.endsWith('guru-quiz-create.html')) {
+    showTeacherClassAndMapel();
+    setupQuizEditorForm(); // Replace the old function
+
+    // Check if we're editing an existing quiz or creating new
+    const params = new URLSearchParams(window.location.search);
+    const editId = params.get("edit");
+
+    if (editId) {
+      // Load existing quiz data
+      loadQuizForEditing(editId);
+    } else {
+      // Load pending data from quick create
+      const pendingData = loadPendingQuizData();
+      if (!pendingData) {
+        // If no pending data, redirect back to quiz list
+        window.location.href = "guru-quiz.html";
+      }
+    }
+
+    // Add initial question if none exists
+    const questionsContainer = document.getElementById("questions-container");
+    if (questionsContainer && questionsContainer.children.length === 0) {
+      addQuestion();
+    }
+  }
+
+  else if (path.endsWith('guru-quiz-results.html')) {
+    loadQuizResults();
+  }
   else initLogin();
 });

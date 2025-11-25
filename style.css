@@ -261,6 +261,221 @@ tr:nth-child(odd) {
 }
 
 /* ====================================================
+  QUIZZES
+   ==================================================== */
+/* Quiz specific styles */
+.quiz-form {
+  margin-top: 20px;
+}
+
+.question-card {
+  background: var(--colorWhite);
+  border: 1px solid var(--colorAccLight);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.question-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  border-bottom: 1px solid var(--colorAccLight);
+  padding-bottom: 10px;
+}
+
+.question-header h3 {
+  margin: 0;
+  color: var(--colorAcc);
+}
+
+.points {
+  background: var(--colorAcc);
+  color: var(--colorWhite);
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.9em;
+}
+
+.question-text {
+  font-size: 1.1em;
+  line-height: 1.5;
+  margin-bottom: 15px;
+}
+
+.question-options {
+  margin-left: 10px;
+}
+
+.question-options label {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.question-options label:hover {
+  background-color: var(--colorMain);
+}
+
+#quiz-timer {
+  font-weight: bold;
+  font-size: 1.2em;
+  padding: 5px 10px;
+  border-radius: 5px;
+  background: var(--colorWhite);
+  color: var(--colorBlack);
+}
+
+/* Results page styles */
+.result-card {
+  text-align: center;
+  padding: 30px;
+}
+
+.result-score {
+  font-size: 2em;
+  font-weight: bold;
+  color: var(--colorAcc);
+  margin: 20px 0;
+}
+
+.grade-card {
+  border-left: 4px solid var(--colorAcc);
+}
+
+/* Grades page styles */
+.grade-card {
+  border-left: 4px solid var(--colorAcc);
+  margin-bottom: 20px;
+}
+
+.quiz-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.quiz-header h3 {
+  margin: 0;
+  flex: 1;
+}
+
+.subject-badge {
+  background: var(--colorAcc);
+  color: var(--colorWhite);
+  padding: 4px 12px;
+  border-radius: 15px;
+  font-size: 0.9em;
+  font-weight: bold;
+}
+
+.attempts-list {
+  border: 1px solid var(--colorAccLight);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.attempt-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  border-bottom: 1px solid var(--colorAccLight);
+  background: var(--colorWhite);
+}
+
+.attempt-item:last-child {
+  border-bottom: none;
+}
+
+.attempt-info {
+  flex: 1;
+}
+
+.attempt-info strong {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.attempt-date {
+  font-size: 0.9em;
+  color: var(--colorAcc);
+}
+
+.attempt-score {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+}
+
+.score {
+  font-weight: bold;
+  font-size: 1.1em;
+}
+
+.percentage {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-weight: bold;
+  font-size: 0.9em;
+}
+
+.score-excellent {
+  background: #4CAF50;
+  color: white;
+}
+
+.score-good {
+  background: #8BC34A;
+  color: white;
+}
+
+.score-average {
+  background: #FFC107;
+  color: black;
+}
+
+.score-poor {
+  background: #F44336;
+  color: white;
+}
+
+.attempt-status {
+  background: var(--colorAccLight);
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.9em;
+}
+
+/* Responsive design for grades */
+@media (max-width: 600px) {
+  .attempt-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .attempt-score {
+    flex-direction: row;
+    align-items: center;
+    gap: 15px;
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .quiz-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+
+/* ====================================================
    FORUM & DISCUSSION STYLES
    ==================================================== */
 .post {

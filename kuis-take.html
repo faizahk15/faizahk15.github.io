@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
-  <title>E-Learning SMP - Kuis</title>
+  <title>Mengerjakan Kuis</title>
   <script>
     const user = JSON.parse(localStorage.getItem("loggedInUser"));
     if (!user) {
@@ -17,27 +17,23 @@
     <button id="menu-toggle" class="menu-toggle">☰</button>
     <div class="headerSpacer"></div>
     <div class="headerTitle">
-      <h1>E-Learning SMP</h1>
-      <p>Halaman Kuis</p>
+      <h1 id="quiz-title">Mengerjakan Kuis</h1>
+      <p>Waktu tersisa: <span id="quiz-timer">--:--</span></p>
     </div>
     <div class="headerProfile">
       <img src="assets/profile.png" class="thumb">
     </div>
   </header>
 
-  <nav id="nav-bar">
-    <a href="dashboard.html">Dashboard</a>
-    <a href="materi.html">Materi</a>
-    <a href="kuis.html" class="select">Kuis</a>
-    <a href="forum.html">Forum</a>
-    <a href="profil.html">Profil</a>
-  </nav>
-
   <div class="container">
-    <div id="quiz-list">
-      <!-- Quizzes will be loaded here dynamically -->
-      <p>Memuat kuis...</p>
+    <div class="card">
+      <h2 id="quiz-description">Deskripsi Kuis</h2>
+      <p><strong>Batas Waktu:</strong> <span id="time-limit">-</span> menit</p>
     </div>
+
+    <form id="quiz-form" class="quiz-form">
+      <!-- Questions will be loaded here dynamically -->
+    </form>
   </div>
 
   <footer>
@@ -45,5 +41,10 @@
   </footer>
 
   <script src="main.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      loadQuizForTaking();
+    });
+  </script>
 </body>
 </html>

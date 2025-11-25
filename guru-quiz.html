@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+  <title>E-Learning SMP - Kelola Kuis</title>
+</head>
+<body>
+  <header class="headerBox">
+    <button id="menu-toggle" class="menu-toggle">☰</button>
+    <div class="headerSpacer"></div>
+    <div class="headerTitle">
+      <h1>E-Learning SMP</h1>
+      <p>Kelola Kuis</p>
+    </div>
+    <div class="headerProfile">
+      <img src="assets/profile.png" class="thumb">
+    </div>
+  </header>
+
+  <nav id="nav-bar">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="guru-materi.html">Kelola Materi</a>
+    <a href="guru-quiz.html" class="select">Kelola Kuis</a>
+    <a href="forum.html">Forum</a>
+    <a href="profil.html">Profil</a>
+  </nav>
+
+  <div class="container">
+    <div class="card">
+      <h2>📝 Kuis Saya</h2>
+      <p id="teacher-class-info" style="margin-bottom: 15px; opacity: 0.8;"></p>
+      
+      <button class="btn" onclick="openCreateQuizModal()">+ Buat Kuis Baru</button>
+      
+      <div id="quiz-list" style="margin-top: 20px;">
+        <!-- Quiz list will be loaded here -->
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>📊 Statistik Kuis</h2>
+      <div id="quiz-stats">
+        <p>Memuat statistik...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Quiz Modal -->
+  <div id="createQuizModal" class="modal hidden">
+    <div class="modal-box">
+      <h3>Buat Kuis Baru</h3>
+      <form id="createQuizForm">
+        <label>Judul Kuis:</label>
+        <input type="text" id="quizTitle" required>
+        
+        <label>Deskripsi:</label>
+        <textarea id="quizDescription" rows="3"></textarea>
+        
+        <label>Batas Waktu (menit):</label>
+        <input type="number" id="quizTimeLimit" value="30" min="1">
+        
+        <label>Maksimal Attempt:</label>
+        <input type="number" id="quizMaxAttempts" value="1" min="1">
+        
+        <label>Tersedia Dari:</label>
+        <input type="datetime-local" id="quizAvailableFrom">
+        
+        <label>Tersedia Sampai:</label>
+        <input type="datetime-local" id="quizAvailableUntil">
+        
+        <div style="margin-top: 15px; display: flex; gap: 10px;">
+          <button type="submit" class="btn">Buat Kuis</button>
+          <button type="button" class="btn cancel" onclick="closeCreateQuizModal()">Batal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <footer>
+    &copy; 2025 E-Learning SMP | Dikembangkan oleh Tim
+  </footer>
+
+  <script src="main.js"></script>
+</body>
+</html>

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
-  <title>E-Learning SMP - Kuis</title>
+  <title>Hasil Kuis</title>
   <script>
     const user = JSON.parse(localStorage.getItem("loggedInUser"));
     if (!user) {
@@ -17,8 +17,7 @@
     <button id="menu-toggle" class="menu-toggle">☰</button>
     <div class="headerSpacer"></div>
     <div class="headerTitle">
-      <h1>E-Learning SMP</h1>
-      <p>Halaman Kuis</p>
+      <h1>Hasil Kuis</h1>
     </div>
     <div class="headerProfile">
       <img src="assets/profile.png" class="thumb">
@@ -28,15 +27,14 @@
   <nav id="nav-bar">
     <a href="dashboard.html">Dashboard</a>
     <a href="materi.html">Materi</a>
-    <a href="kuis.html" class="select">Kuis</a>
+    <a href="kuis.html">Kuis</a>
     <a href="forum.html">Forum</a>
     <a href="profil.html">Profil</a>
   </nav>
 
   <div class="container">
-    <div id="quiz-list">
-      <!-- Quizzes will be loaded here dynamically -->
-      <p>Memuat kuis...</p>
+    <div id="quiz-result">
+      <!-- Results will be loaded here -->
     </div>
   </div>
 
@@ -45,5 +43,10 @@
   </footer>
 
   <script src="main.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      displayQuizResults();
+    });
+  </script>
 </body>
 </html>
