@@ -840,6 +840,26 @@ label {
 }
 
 /* ====================================================
+   UNIVERSAL MENU BUTTON (Desktop hidden by default)
+   ==================================================== */
+.headerBox {
+  display: flex;
+  align-items: center;
+}
+
+.menu-toggle {
+  position: static;
+  display: none;  /* Hidden on desktop, shown on mobile via media query */
+  background: var(--colorAcc);
+  color: var(--colorWhite);
+  border: none;
+  font-size: 1.5em;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+/* ====================================================
    RESPONSIVE DESIGN - MOBILE STYLES
    ==================================================== */
 @media (max-width: 500px) {
@@ -919,24 +939,4 @@ label {
   .overlay.show {
     display: block;
   }
-}
-
-/* ====================================================
-   UNIVERSAL MENU BUTTON (Desktop hidden by default)
-   ==================================================== */
-.headerBox {
-  display: flex;
-  align-items: center;
-}
-
-.menu-toggle {
-  position: static;
-  display: none;  /* Hidden on desktop, shown on mobile via media query */
-  background: var(--colorAcc);
-  color: var(--colorWhite);
-  border: none;
-  font-size: 1.5em;
-  padding: 5px 10px;
-  border-radius: 5px;
-  cursor: pointer;
 }
