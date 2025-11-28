@@ -479,12 +479,15 @@ async function loadStudentQuizzes() {
 
   try {
     container.innerHTML = "<p>Memuat kuis...</p>";
-
+    console.log("User class:", user.class); // Debug log
+    console.log("User ID:", user.id_user); // Debug log
     const res = await fetch(`${API}/quiz/student/${user.class}?user_id=${user.id_user}`);
     const data = await res.json();
+    console.log("API Response:", data); // Debug log
 
     if (!data.success || data.quizzes.length === 0) {
       container.innerHTML = "<p>Tidak ada kuis yang tersedia saat ini.</p>";
+      console.log("No quizzes found for class:", user.class); // Debug log
       return;
     }
 
@@ -492,18 +495,18 @@ async function loadStudentQuizzes() {
     data.quizzes.forEach(quiz => {
       const quizCard = document.createElement("div");
       quizCard.className = "card";
-      
+
       // Check if quiz is available
       const now = new Date();
       const availableFrom = quiz.available_from ? new Date(quiz.available_from) : null;
       const availableUntil = quiz.available_until ? new Date(quiz.available_until) : null;
-      
-      const isAvailable = (!availableFrom || now >= availableFrom) && 
-                         (!availableUntil || now <= availableUntil);
-      
+
+      const isAvailable = (!availableFrom || now >= availableFrom) &&
+        (!availableUntil || now <= availableUntil);
+
       const attemptsMade = quiz.attempts_made || 0;
       const attemptsLeft = Math.max(0, quiz.max_attempts - attemptsMade);
-      
+
       quizCard.innerHTML = `
         <h3>${quiz.title}</h3>
         <p>${quiz.description || 'Tidak ada deskripsi'}</p>
@@ -518,27 +521,27 @@ async function loadStudentQuizzes() {
         ${availableUntil ? `<p><strong>Sampai:</strong> ${new Date(quiz.available_until).toLocaleString('id-ID')}</p>` : ''}
         
         <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
-          ${isAvailable && attemptsLeft > 0 
-            ? `<button class="btn start-quiz" data-id="${quiz.id_quiz}">Mulai Kuis</button>` 
-            : `<button class="btn" disabled>${!isAvailable ? 'Belum Tersedia' : 'Tidak Ada Percobaan Lagi'}</button>`}
+          ${isAvailable && attemptsLeft > 0
+          ? `<button class="btn start-quiz" data-id="${quiz.id_quiz}">Mulai Kuis</button>`
+          : `<button class="btn" disabled>${!isAvailable ? 'Belum Tersedia' : 'Tidak Ada Percobaan Lagi'}</button>`}
           
-          ${attemptsMade > 0 
-            ? `<button class="btn view-results" data-id="${quiz.id_quiz}">Lihat Nilai</button>` 
-            : ''}
+          ${attemptsMade > 0
+          ? `<button class="btn view-results" data-id="${quiz.id_quiz}">Lihat Nilai</button>`
+          : ''}
         </div>
       `;
-      
+
       container.appendChild(quizCard);
     });
 
     // Use event delegation instead of individual event listeners
-    container.addEventListener('click', function(e) {
+    container.addEventListener('click', function (e) {
       // Handle "Mulai Kuis" button clicks
       if (e.target.classList.contains('start-quiz')) {
         const quizId = e.target.getAttribute('data-id');
         startQuiz(quizId);
       }
-      
+
       // Handle "Lihat Nilai" button clicks
       if (e.target.classList.contains('view-results')) {
         const quizId = e.target.getAttribute('data-id');
@@ -964,26 +967,112 @@ function getScoreColor(percentage) {
 // Load detailed quiz attempt
 async function loadQuizAttemptDetail() {
   const params = new URLSearchParams(window.location.search);
-  const attemptId = params.get("attempt");
+  const attemptId = params.get("id");
 
   if (!attemptId) {
-    window.location.href = "kuis-nilai.html";
+    window.location.href = "guru-quiz-results.html";
     return;
   }
 
   const container = document.getElementById("attempt-detail");
+  const attemptTitle = document.getElementById("attempt-title");
+  const attemptHeader = document.getElementById("attempt-header");
+
   if (!container) return;
 
   try {
-    // In a real implementation, you'd fetch attempt details from API
-    // For now, we'll show a simplified version
-    container.innerHTML = `
-      <div class="card">
-        <h2>Detail Percobaan Kuis</h2>
-        <p>Fitur detail percobaan kuis sedang dalam pengembangan.</p>
-        <a href="kuis-nilai.html" class="btn">Kembali ke Daftar Nilai</a>
+    container.innerHTML = "<p>Memuat detail percobaan...</p>";
+
+    const res = await fetch(`${API}/teacher/quiz/attempt/${attemptId}`);
+    const data = await res.json();
+
+    if (!data.success) {
+      container.innerHTML = `<p>Error: ${data.error}</p>`;
+      return;
+    }
+
+    const attempt = data.attempt;
+    const answers = data.answers;
+
+    // Display attempt header
+    attemptTitle.textContent = `Detail Percobaan: ${attempt.quiz_title}`;
+    attemptHeader.innerHTML = `
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+        <div class="info-card">
+          <strong>Siswa:</strong><br>
+          ${attempt.real_name} (${attempt.class})
+        </div>
+        <div class="info-card">
+          <strong>Percobaan Ke:</strong><br>
+          ${attempt.attempt_number}
+        </div>
+        <div class="info-card">
+          <strong>Skor:</strong><br>
+          ${attempt.score}/${attempt.max_score} (${Math.round((attempt.score / attempt.max_score) * 100)}%)
+        </div>
+        <div class="info-card">
+          <strong>Submit:</strong><br>
+          ${new Date(attempt.submitted_at).toLocaleString('id-ID')}
+        </div>
       </div>
     `;
+
+    // Display detailed answers
+    if (answers.length === 0) {
+      container.innerHTML = "<p>Tidak ada jawaban yang tersimpan.</p>";
+      return;
+    }
+
+    container.innerHTML = `
+      <h3>Detail Jawaban (${answers.length} pertanyaan)</h3>
+      <div id="answers-list"></div>
+    `;
+
+    const answersList = document.getElementById("answers-list");
+
+    answers.forEach((answer, index) => {
+      const answerCard = document.createElement("div");
+      answerCard.className = "answer-card";
+      answerCard.style.border = "1px solid #ddd";
+      answerCard.style.borderRadius = "8px";
+      answerCard.style.padding = "15px";
+      answerCard.style.marginBottom = "15px";
+      answerCard.style.backgroundColor = answer.points_earned > 0 ? "#f8fff8" : "#fff8f8";
+
+      let answerHtml = `
+        <div style="display: flex; justify-content: between; align-items: start; margin-bottom: 10px;">
+          <h4 style="margin: 0; flex: 1;">Pertanyaan ${index + 1} (${answer.points_earned}/${answer.max_points} poin)</h4>
+          <span style="color: ${answer.points_earned > 0 ? 'green' : 'red'}; font-weight: bold;">
+            ${answer.points_earned > 0 ? '✓ Benar' : '✗ Salah'}
+          </span>
+        </div>
+        <p><strong>Pertanyaan:</strong> ${answer.question_text}</p>
+        <p><strong>Tipe:</strong> ${answer.question_type}</p>
+      `;
+
+      if (answer.question_type === 'essay') {
+        answerHtml += `
+          <p><strong>Jawaban Essay:</strong></p>
+          <div style="background: #f5f5f5; padding: 10px; border-radius: 5px; margin: 10px 0;">
+            ${answer.answer_text || '<em>Tidak ada jawaban</em>'}
+          </div>
+          <p><em>Jawaban essay memerlukan penilaian manual oleh guru.</em></p>
+        `;
+      } else {
+        answerHtml += `
+          <p><strong>Jawaban Dipilih:</strong> ${answer.selected_option_text || '<em>Tidak ada pilihan</em>'}</p>
+        `;
+
+        if (answer.correct_option_text) {
+          answerHtml += `
+            <p><strong>Jawaban Benar:</strong> ${answer.correct_option_text}</p>
+          `;
+        }
+      }
+
+      answerCard.innerHTML = answerHtml;
+      answersList.appendChild(answerCard);
+    });
 
   } catch (error) {
     console.error("Error loading attempt detail:", error);
@@ -1016,7 +1105,7 @@ function setupCreateQuizForm() {
     const user = JSON.parse(localStorage.getItem("loggedInUser"));
     if (!user) return;
 
-    // Get form data
+    // Get form data - including proper date handling
     const quizData = {
       title: document.getElementById("quizTitle").value.trim(),
       description: document.getElementById("quizDescription").value.trim(),
@@ -1024,13 +1113,24 @@ function setupCreateQuizForm() {
       max_attempts: parseInt(document.getElementById("quizMaxAttempts").value) || 1,
       available_from: document.getElementById("quizAvailableFrom").value || null,
       available_until: document.getElementById("quizAvailableUntil").value || null,
-      questions: [] // Empty questions for now - they'll be added in the detailed editor
+      questions: []
     };
 
     // Validate required fields
     if (!quizData.title) {
       alert("Judul kuis harus diisi");
       return;
+    }
+
+    // Validate dates if both are provided
+    if (quizData.available_from && quizData.available_until) {
+      const fromDate = new Date(quizData.available_from);
+      const untilDate = new Date(quizData.available_until);
+
+      if (untilDate <= fromDate) {
+        alert("Tanggal 'Tersedia Sampai' harus setelah tanggal 'Tersedia Dari'");
+        return;
+      }
     }
 
     try {
@@ -1041,7 +1141,7 @@ function setupCreateQuizForm() {
       submitBtn.disabled = true;
 
       // Create the quiz
-      const result = await createNewQuiz(quizData);
+      const result = await quickCreateQuiz(quizData);
 
       if (result.success) {
         alert("Kuis berhasil dibuat! Sekarang tambahkan pertanyaan.");
@@ -1069,7 +1169,7 @@ function setupCreateQuizForm() {
 }
 
 
-// Enhanced quickCreateQuiz function that preserves data
+// Enhanced quickCreateQuiz function that preserves ALL data including dates
 async function quickCreateQuiz(quizData) {
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
 
@@ -1094,11 +1194,14 @@ async function quickCreateQuiz(quizData) {
 
     const data = await res.json();
 
-    // Store quiz data in localStorage for the editor page
+    // Store COMPLETE quiz data in localStorage for the editor page
     if (data.success) {
       localStorage.setItem('pendingQuizData', JSON.stringify({
         ...quizData,
-        id_quiz: data.id_quiz
+        id_quiz: data.id_quiz,
+        // Ensure dates are preserved exactly as entered
+        available_from: quizData.available_from,
+        available_until: quizData.available_until
       }));
     }
 
@@ -1124,11 +1227,16 @@ function loadPendingQuizData() {
   document.getElementById('quizTimeLimit').value = quizData.time_limit || 30;
   document.getElementById('quizMaxAttempts').value = quizData.max_attempts || 1;
 
+  // Properly handle dates - convert to datetime-local format
   if (quizData.available_from) {
-    document.getElementById('quizAvailableFrom').value = quizData.available_from;
+    // Convert the date string to the format needed by datetime-local input
+    const fromDate = new Date(quizData.available_from);
+    document.getElementById('quizAvailableFrom').value = fromDate.toISOString().slice(0, 16);
   }
+
   if (quizData.available_until) {
-    document.getElementById('quizAvailableUntil').value = quizData.available_until;
+    const untilDate = new Date(quizData.available_until);
+    document.getElementById('quizAvailableUntil').value = untilDate.toISOString().slice(0, 16);
   }
 
   return quizData;
@@ -1137,6 +1245,37 @@ function loadPendingQuizData() {
 // Clear pending quiz data after successful save
 function clearPendingQuizData() {
   localStorage.removeItem('pendingQuizData');
+}
+
+
+
+// Add date validation helper
+function validateQuizDates() {
+  const fromInput = document.getElementById('quizAvailableFrom');
+  const untilInput = document.getElementById('quizAvailableUntil');
+
+  if (fromInput.value && untilInput.value) {
+    const fromDate = new Date(fromInput.value);
+    const untilDate = new Date(untilInput.value);
+
+    if (untilDate <= fromDate) {
+      alert("⚠️ Peringatan: Tanggal 'Tersedia Sampai' harus setelah tanggal 'Tersedia Dari'");
+      untilInput.focus();
+      return false;
+    }
+  }
+  return true;
+}
+
+// Add event listeners for date validation
+function setupDateValidation() {
+  const fromInput = document.getElementById('quizAvailableFrom');
+  const untilInput = document.getElementById('quizAvailableUntil');
+
+  if (fromInput && untilInput) {
+    fromInput.addEventListener('change', validateQuizDates);
+    untilInput.addEventListener('change', validateQuizDates);
+  }
 }
 
 
@@ -1449,33 +1588,57 @@ function addQuestion(questionData = null) {
   `;
 
   container.appendChild(questionDiv);
+
+  // If it's a new multiple choice question (not loaded from data), create 4 default options
+  if (!questionData && questionDiv.querySelector('.question-type').value === 'multiple_choice') {
+    createDefaultOptions(questionDiv);
+  }
 }
 
-// Render options for multiple choice
-function renderOptions(options) {
-  if (options.length === 0) {
-    return `
-      <div class="option-row">
-        <input type="text" class="option-text" placeholder="Pilihan A" required>
-        <label style="display: inline-flex; align-items: center; margin-left: 10px;">
-          <input type="radio" class="correct-option" name="correct_${Date.now()}" value="0">
-          <span style="margin-left: 5px;">Benar</span>
-        </label>
-      </div>
-    `;
-  }
+// Create 4 default options for new multiple choice questions
+function createDefaultOptions(questionDiv) {
+  const optionsList = questionDiv.querySelector('.options-list');
+  const optionLabels = ['A', 'B', 'C', 'D'];
 
-  return options.map((option, index) => `
-    <div class="option-row">
-      <input type="text" class="option-text" value="${option.option_text}" required>
+  optionsList.innerHTML = ''; // Clear any existing options
+
+  optionLabels.forEach((label, index) => {
+    const optionRow = document.createElement("div");
+    optionRow.className = "option-row";
+    optionRow.style.marginBottom = "8px";
+
+    optionRow.innerHTML = `
+      <input type="text" class="option-text" placeholder="Pilihan ${label}" value="" required>
       <label style="display: inline-flex; align-items: center; margin-left: 10px;">
-        <input type="radio" class="correct-option" name="correct_${Date.now()}" value="${index}" 
-          ${option.is_correct ? 'checked' : ''}>
+        <input type="radio" class="correct-option" name="correct_${Date.now()}" value="${index}" ${index === 0 ? 'checked' : ''}>
         <span style="margin-left: 5px;">Benar</span>
       </label>
       ${index > 0 ? `<button type="button" class="btn small danger" onclick="removeOption(this)" style="margin-left: 10px;">Hapus</button>` : ''}
-    </div>
-  `).join('');
+    `;
+
+    optionsList.appendChild(optionRow);
+  });
+}
+
+// Update the renderOptions function to handle default options
+function renderOptions(options) {
+  // If we have existing options from loaded data, render them
+  if (options.length > 0) {
+    return options.map((option, index) => `
+      <div class="option-row">
+        <input type="text" class="option-text" value="${option.option_text}" required>
+        <label style="display: inline-flex; align-items: center; margin-left: 10px;">
+          <input type="radio" class="correct-option" name="correct_${Date.now()}" value="${index}" 
+            ${option.is_correct ? 'checked' : ''}>
+          <span style="margin-left: 5px;">Benar</span>
+        </label>
+        ${index > 0 ? `<button type="button" class="btn small danger" onclick="removeOption(this)" style="margin-left: 10px;">Hapus</button>` : ''}
+      </div>
+    `).join('');
+  }
+
+  // If no options provided (new question), return empty - the createDefaultOptions will handle it
+  return '';
 }
 
 // Add option to question
@@ -1504,8 +1667,53 @@ function removeOption(button) {
 
 // Toggle options based on question type
 function toggleQuestionOptions(select) {
-  const optionsContainer = select.closest('.question-card').querySelector('.options-container');
-  optionsContainer.style.display = select.value === 'essay' ? 'none' : 'block';
+  const questionCard = select.closest('.question-card');
+  const optionsContainer = questionCard.querySelector('.options-container');
+
+  if (select.value === 'essay') {
+    optionsContainer.style.display = 'none';
+  } else {
+    optionsContainer.style.display = 'block';
+
+    // If it's a new multiple choice question and no options exist yet, create default options
+    const optionsList = questionCard.querySelector('.options-list');
+    if (select.value === 'multiple_choice' && optionsList.children.length === 0) {
+      createDefaultOptions(questionCard);
+    }
+
+    // For true/false questions, ensure we have exactly 2 options
+    if (select.value === 'true_false' && optionsList.children.length === 0) {
+      createTrueFalseOptions(questionCard);
+    }
+  }
+}
+
+// Create default true/false options
+function createTrueFalseOptions(questionDiv) {
+  const optionsList = questionDiv.querySelector('.options-list');
+  const trueFalseOptions = [
+    { text: 'Benar', correct: true },
+    { text: 'Salah', correct: false }
+  ];
+
+  optionsList.innerHTML = '';
+
+  trueFalseOptions.forEach((option, index) => {
+    const optionRow = document.createElement("div");
+    optionRow.className = "option-row";
+    optionRow.style.marginBottom = "8px";
+
+    optionRow.innerHTML = `
+      <input type="text" class="option-text" value="${option.text}" required>
+      <label style="display: inline-flex; align-items: center; margin-left: 10px;">
+        <input type="radio" class="correct-option" name="correct_${Date.now()}" value="${index}" ${option.correct ? 'checked' : ''}>
+        <span style="margin-left: 5px;">Benar</span>
+      </label>
+      ${index > 0 ? `<button type="button" class="btn small danger" onclick="removeOption(this)" style="margin-left: 10px;">Hapus</button>` : ''}
+    `;
+
+    optionsList.appendChild(optionRow);
+  });
 }
 
 // Open create quiz modal
@@ -1555,8 +1763,8 @@ async function deleteQuiz(quizId, quizTitle = '') {
     // If we have statistics and there are attempts, show detailed confirmation
     if (statsData && statsData.success && statsData.statistics.total_attempts > 0) {
       const stats = statsData.statistics;
-      
-      const detailedMessage = 
+
+      const detailedMessage =
         `HAPUS KUIS: "${stats.title}"\n\n` +
         `📊 STATISTIK:\n` +
         `• ${stats.total_attempts} total percobaan\n` +
@@ -1570,7 +1778,7 @@ async function deleteQuiz(quizId, quizTitle = '') {
         `Yakin ingin menghapus?`;
 
       deleteBtn.textContent = "Menunggu...";
-      
+
       if (!confirm(detailedMessage)) {
         deleteBtn.textContent = originalText;
         deleteBtn.disabled = false;
@@ -1589,7 +1797,7 @@ async function deleteQuiz(quizId, quizTitle = '') {
 
     if (data.success) {
       let successMessage = `✅ Kuis "${quizTitle}" berhasil dihapus.`;
-      
+
       if (data.deleted) {
         const d = data.deleted;
         if (d.attempts > 0) {
@@ -1599,7 +1807,7 @@ async function deleteQuiz(quizId, quizTitle = '') {
             `• ${d.answers} jawaban siswa`;
         }
       }
-      
+
       alert(successMessage);
       loadTeacherQuizzes();
     } else {
@@ -1611,7 +1819,7 @@ async function deleteQuiz(quizId, quizTitle = '') {
   } catch (error) {
     console.error("Error deleting quiz:", error);
     alert("❌ Error menghapus kuis. Silakan coba lagi.");
-    
+
     const deleteBtn = event.target;
     deleteBtn.textContent = "Hapus";
     deleteBtn.disabled = false;
@@ -1633,18 +1841,38 @@ async function loadQuizResults() {
     const data = await res.json();
 
     if (!data.success) {
-      alert("Gagal memuat hasil kuis");
+      alert("Gagal memuat hasil kuis: " + data.error);
       return;
     }
 
     // Display quiz info
     document.getElementById("quiz-title").textContent = data.quiz.title;
     document.getElementById("quiz-info").textContent =
-      `${data.quiz.subject_name} • ${data.quiz.total_attempts} percobaan • Rata-rata: ${data.quiz.average_score || 0}%`;
+      `${data.quiz.subject_name} • ${data.statistics.total_attempts} percobaan • Rata-rata: ${data.statistics.average_score || 0}%`;
+
+    // Display analytics
+    const analyticsDiv = document.getElementById("quiz-analytics");
+    analyticsDiv.innerHTML = `
+      <p><strong>Total Percobaan:</strong> ${data.statistics.total_attempts}</p>
+      <p><strong>Skor Tertinggi:</strong> ${data.statistics.highest_score || 0}%</p>
+      <p><strong>Skor Terendah:</strong> ${data.statistics.lowest_score || 0}%</p>
+      <p><strong>Rata-rata Skor:</strong> ${data.statistics.average_score || 0}%</p>
+    `;
 
     // Display results table
     const resultsTable = document.getElementById("results-table");
     resultsTable.innerHTML = '';
+
+    if (data.attempts.length === 0) {
+      resultsTable.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 20px;">
+            Belum ada siswa yang mengerjakan kuis ini.
+          </td>
+        </tr>
+      `;
+      return;
+    }
 
     data.attempts.forEach(attempt => {
       const row = document.createElement("tr");
@@ -1653,7 +1881,7 @@ async function loadQuizResults() {
         <td>${attempt.class}</td>
         <td>${attempt.attempt_number}</td>
         <td>${attempt.score}/${attempt.max_score}</td>
-        <td>${Math.round((attempt.score / attempt.max_score) * 100)}%</td>
+        <td>${attempt.percentage}%</td>
         <td>${new Date(attempt.submitted_at).toLocaleString('id-ID')}</td>
         <td>
           <button class="btn small" onclick="viewAttemptDetails(${attempt.id_attempt})">
@@ -1664,17 +1892,9 @@ async function loadQuizResults() {
       resultsTable.appendChild(row);
     });
 
-    // Display analytics
-    const analyticsDiv = document.getElementById("quiz-analytics");
-    analyticsDiv.innerHTML = `
-      <p><strong>Total Percobaan:</strong> ${data.quiz.total_attempts}</p>
-      <p><strong>Skor Tertinggi:</strong> ${data.quiz.highest_score || 0}%</p>
-      <p><strong>Skor Terendah:</strong> ${data.quiz.lowest_score || 0}%</p>
-      <p><strong>Rata-rata Skor:</strong> ${data.quiz.average_score || 0}%</p>
-    `;
-
   } catch (error) {
     console.error("Error loading quiz results:", error);
+    alert("Error memuat hasil kuis");
   }
 }
 
@@ -2087,36 +2307,28 @@ async function initTeacherDashboard() {
   const dataClass = await resClass.json();
 
   const classList = document.getElementById("teacher-classes");
-  classList.innerHTML = "";
-  dataClass.classes.forEach(c => {
-    const li = document.createElement("li");
-    li.innerHTML = `<strong>${c.class}</strong> - ${c.name}`;
-    classList.appendChild(li);
-  });
+  if (classList) {
+    classList.innerHTML = "";
+    dataClass.classes.forEach(c => {
+      const li = document.createElement("li");
+      li.innerHTML = `<strong>${c.class}</strong> - ${c.name}`;
+      classList.appendChild(li);
+    });
+  }
 
-  // Load teacher materi
-  const resMat = await fetch(`${API}/teacher/materi/${user.id_user}`);
-  const dataMat = await resMat.json();
+  // Use the reusable function
+  await loadTeacherMateri();
 
-  const materiContainer = document.getElementById("teacher-materi");
-  materiContainer.innerHTML = "";
-  dataMat.materi.forEach(m => {
-    const div = document.createElement("div");
-    div.innerHTML = `
-      <p><strong>${m.title}</strong> — ${m.class}</p>
-      <a href="${m.file_url}" target="_blank">Lihat</a><br>
-      <button class="btn" onclick="editMateri(${m.id_materi})">Edit</button>
-      <button class="btn" onclick="deleteMateri(${m.id_materi})" style="background:#d66">Hapus</button>
-    `;
-    materiContainer.appendChild(div);
-  });
-
+  // Load teacher students
+  await loadTeacherStudents();
+  await showTeacherClassAndMapel();
 
   // Load activity
   const activity = document.getElementById("teacher-activity");
-  activity.innerHTML = dataMat.materi.length
-    ? `Anda mengunggah ${dataMat.materi.length} materi.`
-    : "Belum ada aktivitas.";
+  if (activity) {
+    // You might want to fetch actual activity data here
+    activity.innerHTML = "Aktivitas terbaru akan ditampilkan di sini.";
+  }
 }
 
 // get teacher mapel
@@ -2178,6 +2390,43 @@ async function loadTeacherStudents() {
   });
 }
 
+// load teacher materi
+async function loadTeacherMateri() {
+  const user = JSON.parse(localStorage.getItem("loggedInUser"));
+  if (!user || user.role !== "teacher") return;
+
+  const resMat = await fetch(`${API}/teacher/materi/${user.id_user}`);
+  const dataMat = await resMat.json();
+
+  const materiContainer = document.getElementById("teacher-materi");
+  if (!materiContainer) return;
+
+  materiContainer.innerHTML = "";
+
+  if (dataMat.materi && dataMat.materi.length > 0) {
+    dataMat.materi.forEach(m => {
+      const div = document.createElement("div");
+      div.style.marginBottom = "15px";
+      div.style.padding = "10px";
+      div.style.border = "1px solid #ddd";
+      div.style.borderRadius = "5px";
+
+      div.innerHTML = `
+        <p><strong>${m.title}</strong> — ${m.class}</p>
+        <p>${m.description || 'Tidak ada deskripsi'}</p>
+        <div style="margin-top: 10px;">
+          <a href="${m.file_url}" target="_blank" class="btn small">Lihat File</a>
+          <button class="btn small" onclick="editMateri(${m.id_materi})">Edit</button>
+          <button class="btn small danger" onclick="deleteMateri(${m.id_materi})">Hapus</button>
+        </div>
+      `;
+      materiContainer.appendChild(div);
+    });
+  } else {
+    materiContainer.innerHTML = "<p>Belum ada materi. Tambahkan materi pertama Anda!</p>";
+  }
+}
+
 
 // materi-add.html
 async function initAddMateriPage() {
@@ -2229,7 +2478,7 @@ async function initAddMateriPage() {
 
     if (data.success) {
       alert("Materi berhasil ditambahkan");
-      window.location.href = "dashboard.html";
+      window.location.href = "guru-materi.html";
     } else {
       alert("Error: " + data.error);
     }
@@ -2755,7 +3004,6 @@ document.addEventListener('DOMContentLoaded', () => {
   loadMore();
   const path = window.location.pathname;
 
-
   if (path.endsWith('dashboard.html')) {
     const user = JSON.parse(localStorage.getItem("loggedInUser"));
     if (user.role === "teacher") {
@@ -2764,6 +3012,14 @@ document.addEventListener('DOMContentLoaded', () => {
       showTeacherClassAndMapel();
     } else {
       generateLeaderboard();
+    }
+  }
+
+  else if (path.endsWith('guru-materi.html')) {
+    const user = JSON.parse(localStorage.getItem("loggedInUser"));
+    if (user.role === "teacher") {
+      loadTeacherMateri();
+      showTeacherClassAndMapel();
     }
   }
 
@@ -2803,7 +3059,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // else if (path.endsWith('kuis.html')) initKuisPage();
   // else if (path.endsWith('kuis-detail.html')) initKuisDetail();
 
-  // In your existing DOMContentLoaded event listener in main.js, add:
   // In your existing DOMContentLoaded event listener in main.js, add:
   else if (path.endsWith('kuis.html')) {
     loadStudentQuizzes();
@@ -2865,6 +3120,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   else if (path.endsWith('guru-quiz-results.html')) {
     loadQuizResults();
+  }
+  else if (path.endsWith('guru-quiz-attempt.html')) {
+    loadQuizAttemptDetail();
   }
   else initLogin();
 });

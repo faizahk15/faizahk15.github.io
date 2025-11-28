@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
-  <title>E-Learning SMP - Hasil Kuis</title>
+  <title>E-Learning SMP - Detail Percobaan Kuis</title>
 </head>
 <body>
   <header class="headerBox">
@@ -12,7 +12,7 @@
     <div class="headerSpacer"></div>
     <div class="headerTitle">
       <h1>E-Learning SMP</h1>
-      <p>Hasil Kuis</p>
+      <p>Detail Percobaan Kuis</p>
     </div>
     <div class="headerProfile">
       <img src="assets/profile.png" class="thumb">
@@ -29,38 +29,17 @@
 
   <div class="container">
     <div class="card">
-      <h2 id="quiz-title">Memuat hasil kuis...</h2>
-      <p id="quiz-info"></p>
-      
-      <div class="card" style="background: #f8f9fa; margin: 15px 0;">
-        <h3>📊 Statistik Kuis</h3>
-        <div id="quiz-analytics">
-          <p>Memuat statistik...</p>
-        </div>
+      <h2 id="attempt-title">Memuat detail percobaan...</h2>
+      <div id="attempt-header" style="margin-bottom: 20px;">
+        <!-- Student info and overall score will go here -->
       </div>
 
-      <h3>📋 Daftar Percobaan Siswa</h3>
-      <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Nama Siswa</th>
-              <th>Kelas</th>
-              <th>Percobaan</th>
-              <th>Skor</th>
-              <th>Persentase</th>
-              <th>Waktu Submit</th>
-              <th>Aksi</th>
-            </tr>
-          </thead>
-          <tbody id="results-table">
-            <!-- Results will be loaded here -->
-          </tbody>
-        </table>
+      <div id="attempt-detail">
+        <!-- Detailed questions and answers will be loaded here -->
       </div>
 
       <div style="margin-top: 20px;">
-        <a href="guru-quiz.html" class="btn">Kembali ke Daftar Kuis</a>
+        <button class="btn" onclick="window.history.back()">Kembali ke Hasil Kuis</button>
       </div>
     </div>
   </div>

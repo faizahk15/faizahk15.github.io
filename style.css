@@ -475,6 +475,22 @@ tr:nth-child(odd) {
   font-size: 0.9em;
 }
 
+.info-card {
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 8px;
+  border-left: 4px solid #4CAF50;
+}
+
+.answer-card {
+  transition: all 0.3s ease;
+}
+
+.answer-card:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
+}
+
 /* Responsive design for grades */
 @media (max-width: 600px) {
   .attempt-item {
