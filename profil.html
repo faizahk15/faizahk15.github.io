@@ -17,7 +17,7 @@
       <p>Profil Anda</p>
     </div>
     <div class="headerProfile">
-      <img src="assets/profile.png" class="thumb">
+      <img src="assets/profile.png" class="thumb" id="header-profile-pic" style="border-radius: 50%;">
     </div>
   </header>
 
@@ -32,7 +32,21 @@
   <div class="container">
     <div class="column">
       <div class="card profilePic">
-        <img src="assets/profile.png" class="thumb profilePic">
+        <img src="assets/profile.png" class="thumb profilePic" id="profile-picture">
+        <div id="crop-preview" style="display: none; margin: 10px 0;">
+          <p><strong>Pratinjau setelah dipotong:</strong></p>
+          <img id="preview-image" style="max-width: 200px; border: 2px solid #007bff; border-radius: 5px;">
+        </div>
+        <div style="margin-top: 10px;">
+          <input type="file" id="profile-picture-input" accept="image/jpeg,image/png,image/gif" style="display: none;">
+          <button class="btn small" onclick="document.getElementById('profile-picture-input').click()">
+            Ganti Foto
+          </button>
+          <button class="btn small danger" onclick="removeProfilePicture()" style="margin-top: 5px;">
+            Hapus Foto
+          </button>
+        </div>
+        <div id="upload-status" style="margin-top: 10px;"></div>
       </div>
       <div class="card subject">
         <div class="content">
@@ -57,16 +71,106 @@
     const user = JSON.parse(localStorage.getItem("loggedInUser"));
     if (!user) window.location.href = "index.html";
 
-    // Update profile UI
-    document.addEventListener("DOMContentLoaded", () => {
+    // Update profile UI and load profile picture
+    document.addEventListener("DOMContentLoaded", async () => {
       const box = document.getElementById("profile-info");
+      const profileImg = document.getElementById("profile-picture");
 
       box.innerHTML = `
-      <b>Nama:</b> ${user.real_name}<br>
-      <b>NISN:</b> ${user.username}<br>
-      <b>Kelas:</b> ${user.class}
-    `;
+    <b>Nama:</b> ${user.real_name}<br>
+    <b>NISN:</b> ${user.username}<br>
+    <b>Kelas:</b> ${user.class}
+  `;
+
+      // Load profile picture
+      await loadProfilePicture(user.id_user, profileImg);
+
+      // Setup file input handler
+      const fileInput = document.getElementById("profile-picture-input");
+      fileInput.addEventListener("change", handleProfilePictureUpload);
     });
+
+    // Handle profile picture upload
+    async function handleProfilePictureUpload(event) {
+      const file = event.target.files[0];
+      const statusDiv = document.getElementById("upload-status");
+      const user = JSON.parse(localStorage.getItem("loggedInUser"));
+
+      if (!file) return;
+
+      // Validate file size (2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        statusDiv.innerHTML = '<span style="color: red;">File terlalu besar. Maksimal 2MB.</span>';
+        return;
+      }
+
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+      if (!allowedTypes.includes(file.type)) {
+        statusDiv.innerHTML = '<span style="color: red;">Format tidak didukung. Gunakan JPG, PNG, atau GIF.</span>';
+        return;
+      }
+
+      try {
+        statusDiv.innerHTML = '<span style="color: blue;">Mengupload...</span>';
+
+        const result = await uploadProfilePicture(user.id_user, file);
+
+        if (result.success) {
+          statusDiv.innerHTML = '<span style="color: green;">Foto profil berhasil diupdate!</span>';
+
+          // Reload the profile picture
+          const profileImg = document.getElementById("profile-picture");
+          await loadProfilePicture(user.id_user, profileImg);
+
+          // Clear status after 3 seconds
+          setTimeout(() => {
+            statusDiv.innerHTML = '';
+          }, 3000);
+        } else {
+          statusDiv.innerHTML = `<span style="color: red;">Error: ${result.error}</span>`;
+        }
+      } catch (error) {
+        console.error("Upload error:", error);
+        statusDiv.innerHTML = '<span style="color: red;">Error mengupload foto. Silakan coba lagi.</span>';
+      }
+
+      // Reset file input
+      event.target.value = '';
+    }
+
+    // Remove profile picture
+    async function removeProfilePicture() {
+      const user = JSON.parse(localStorage.getItem("loggedInUser"));
+      const statusDiv = document.getElementById("upload-status");
+
+      if (!confirm("Hapus foto profil?")) return;
+
+      try {
+        const res = await fetch(`${API}/user/profile-picture/${user.id_user}`, {
+          method: "DELETE"
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          statusDiv.innerHTML = '<span style="color: green;">Foto profil dihapus.</span>';
+
+          // Reset to default avatar
+          const profileImg = document.getElementById("profile-picture");
+          profileImg.src = "assets/profile.png";
+
+          setTimeout(() => {
+            statusDiv.innerHTML = '';
+          }, 3000);
+        } else {
+          statusDiv.innerHTML = `<span style="color: red;">Error: ${data.error}</span>`;
+        }
+      } catch (error) {
+        console.error("Remove error:", error);
+        statusDiv.innerHTML = '<span style="color: red;">Error menghapus foto.</span>';
+      }
+    }
 
     // Logout
     document.getElementById("logoutBtn").addEventListener("click", function () {
@@ -74,6 +178,7 @@
     });
   </script>
 
+  <script src="image-processor.js"></script>
   <script src="main.js"></script>
 </body>
 

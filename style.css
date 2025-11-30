@@ -7,7 +7,7 @@
   --colorWhite: #fbfbfb;
   --colorBlack: #2b2d42;
   --colorAcc: #6a7fdb;
-  
+
   /* Derived Colors - Mixed variants for consistency */
   --colorWhite2: color-mix(in srgb, var(--colorWhite) 50%, var(--colorMain));
   --colorAcc2: color-mix(in srgb, var(--colorAcc) 80%, var(--colorBlack));
@@ -16,9 +16,12 @@
   --colorAccLight: color-mix(in srgb, var(--colorAcc) 30%, var(--colorWhite));
 
   /* Ranking Colors for Leaderboard */
-  --colorRank1: #fff184;  /* Gold - 1st place */
-  --colorRank2: #e1e0ff;  /* Silver - 2nd place */
-  --colorRank3: #ffab7c;  /* Bronze - 3rd place */
+  --colorRank1: #fff184;
+  /* Gold - 1st place */
+  --colorRank2: #e1e0ff;
+  /* Silver - 2nd place */
+  --colorRank3: #ffab7c;
+  /* Bronze - 3rd place */
 }
 
 /* ====================================================
@@ -27,8 +30,10 @@
 @font-face {
   font-family: "Author";
   src: url("assets/Author-Variable.ttf") format("truetype");
-  font-weight: 500 900;           /* Variable font weight range */
-  font-stretch: 75% 125%;         /* Variable font width range */
+  font-weight: 500 900;
+  /* Variable font weight range */
+  font-stretch: 75% 125%;
+  /* Variable font width range */
   font-style: normal;
 }
 
@@ -37,16 +42,21 @@
    ==================================================== */
 body {
   font-family: Author, sans-serif;
-  font-size: 120%;                 /* Increased base font size for better readability */
+  font-size: 120%;
+  /* Increased base font size for better readability */
   margin: 0;
-  margin-bottom: 100px;            /* Space for fixed footer */
+  margin-bottom: 100px;
+  /* Space for fixed footer */
   padding: 0;
   background: var(--colorMain);
   color: var(--colorBlack);
 }
 
 /* Remove default margins from headings */
-h1, h2, h3, h4 {
+h1,
+h2,
+h3,
+h4 {
   margin-top: 10px;
   margin-bottom: 10px;
 }
@@ -162,6 +172,7 @@ footer {
 .thumb {
   width: 100px;
   height: 100px;
+  border-radius: 50%;
   object-fit: cover;
   border-radius: 8px;
   transition: transform 0.1s ease;
@@ -174,6 +185,7 @@ footer {
 .thumb.profilePic {
   width: 100%;
   height: 100%;
+  border-radius: 50%;
 }
 
 /* Spacer for header layout alignment */
@@ -208,7 +220,8 @@ iframe {
 
 .progress {
   height: 15px;
-  width: 60%;                      /* Dynamic width - typically set via JS */
+  width: 60%;
+  /* Dynamic width - typically set via JS */
   background: var(--colorAcc);
 }
 
@@ -228,7 +241,8 @@ tr:hover {
   opacity: 0.9;
 }
 
-th, td {
+th,
+td {
   padding: 12px;
   text-align: center;
   border-bottom: 1px solid #ddd;
@@ -264,13 +278,15 @@ tr:nth-child(odd) {
 .table-wrapper {
   width: 100%;
   overflow-x: auto;
-  -webkit-overflow-scrolling: touch;  /* Smooth scroll on iOS */
+  -webkit-overflow-scrolling: touch;
+  /* Smooth scroll on iOS */
 }
 
 .table-wrapper table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 400px;                   /* Prevent excessive squashing on mobile */
+  min-width: 400px;
+  /* Prevent excessive squashing on mobile */
 }
 
 /* Custom scrollbar for table wrapper */
@@ -487,7 +503,7 @@ tr:nth-child(odd) {
 }
 
 .answer-card:hover {
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transform: translateY(-2px);
 }
 
@@ -498,7 +514,7 @@ tr:nth-child(odd) {
     align-items: flex-start;
     gap: 10px;
   }
-  
+
   .attempt-score {
     flex-direction: row;
     align-items: center;
@@ -506,7 +522,7 @@ tr:nth-child(odd) {
     width: 100%;
     justify-content: space-between;
   }
-  
+
   .quiz-header {
     flex-direction: column;
     align-items: flex-start;
@@ -595,11 +611,11 @@ tr:nth-child(odd) {
   .score-summary-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .grading-controls {
     flex-direction: column;
   }
-  
+
   .grading-controls .btn {
     width: 100%;
     text-align: center;
@@ -663,7 +679,9 @@ tr:nth-child(odd) {
   flex-wrap: wrap;
 }
 
-.attempt-count, .best-score, .latest-score {
+.attempt-count,
+.best-score,
+.latest-score {
   background: #e9ecef;
   padding: 4px 8px;
   border-radius: 12px;
@@ -736,11 +754,11 @@ tr:nth-child(odd) {
   .quiz-scores {
     grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
   }
-  
+
   .quiz-meta {
     gap: 8px;
   }
-  
+
   .quiz-grade-item {
     padding: 12px;
   }
@@ -878,26 +896,26 @@ select {
   width: 100%;
   padding: 10px;
   margin-bottom: 10px;
-  
+
   /* Typography */
   font-family: Author, sans-serif;
   font-size: 90%;
   font-weight: bold;
   color: var(--colorAcc);
-  
+
   /* Appearance */
   background: var(--colorWhite);
   border-radius: 5px;
   border: 1px solid var(--colorAcc);
   cursor: pointer;
-  
+
   /* Remove default arrow */
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
-  
+
   /* Custom arrow using background gradients */
-  background-image: 
+  background-image:
     linear-gradient(45deg, transparent 50%, var(--colorAcc) 50%),
     linear-gradient(135deg, var(--colorAcc) 50%, transparent 50%),
     linear-gradient(to right, var(--colorAcc), var(--colorAcc));
@@ -905,10 +923,11 @@ select {
     calc(100% - 20px) calc(50% - 4px),
     calc(100% - 15px) calc(50% - 4px),
     calc(100% - 2.5em) 0.3em;
-  background-size: 
+  background-size:
     5px 5px,
     5px 5px,
-    0 0; /* Invisible bar for consistent layout */
+    0 0;
+  /* Invisible bar for consistent layout */
   background-repeat: no-repeat;
 }
 
@@ -932,8 +951,9 @@ label {
    ==================================================== */
 .modal {
   position: fixed;
-  inset: 0;  /* Shorthand for top, right, bottom, left: 0 */
-  background: rgba(0,0,0,0.6);
+  inset: 0;
+  /* Shorthand for top, right, bottom, left: 0 */
+  background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(2px);
   display: flex;
   align-items: center;
@@ -953,19 +973,20 @@ label {
   width: 90%;
   max-width: 420px;
   border-radius: 12px;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
   animation: pop 0.2s ease-out;
 }
 
 /* Pop-in animation for modals */
 @keyframes pop {
-  from { 
-    transform: scale(0.9); 
-    opacity: 0; 
+  from {
+    transform: scale(0.9);
+    opacity: 0;
   }
-  to { 
-    transform: scale(1); 
-    opacity: 1; 
+
+  to {
+    transform: scale(1);
+    opacity: 1;
   }
 }
 
@@ -1097,7 +1118,8 @@ label {
 
 .menu-toggle {
   position: static;
-  display: none;  /* Hidden on desktop, shown on mobile via media query */
+  display: none;
+  /* Hidden on desktop, shown on mobile via media query */
   background: var(--colorAcc);
   color: var(--colorWhite);
   border: none;
@@ -1111,6 +1133,7 @@ label {
    RESPONSIVE DESIGN - MOBILE STYLES
    ==================================================== */
 @media (max-width: 500px) {
+
   /* Header adjustments for mobile */
   .headerBox {
     justify-content: space-between;
