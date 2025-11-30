@@ -515,6 +515,238 @@ tr:nth-child(odd) {
 
 
 /* ====================================================
+   QUIZ GRADING STYLES
+   ==================================================== */
+
+.grading-form {
+  margin-top: 20px;
+}
+
+.essay-grading {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  margin: 10px 0;
+  border-left: 4px solid #007bff;
+}
+
+.grading-controls {
+  display: flex;
+  gap: 10px;
+  margin: 15px 0;
+  flex-wrap: wrap;
+}
+
+.score-summary {
+  background: #e8f5e8;
+  padding: 15px;
+  border-radius: 8px;
+  margin: 15px 0;
+  border: 1px solid #4CAF50;
+}
+
+.score-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin: 10px 0;
+}
+
+.score-input {
+  width: 80px;
+  padding: 5px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  text-align: center;
+}
+
+/* Enhanced score colors */
+.score-excellent {
+  background: #4CAF50;
+  color: white;
+}
+
+.score-good {
+  background: #8BC34A;
+  color: white;
+}
+
+.score-average {
+  background: #FFC107;
+  color: black;
+}
+
+.score-poor {
+  background: #F44336;
+  color: white;
+}
+
+.teacher-comment {
+  background: #f0f8ff;
+  padding: 10px;
+  border-radius: 5px;
+  border-left: 3px solid #2196F3;
+  margin-top: 10px;
+  font-style: italic;
+}
+
+/* Responsive design for grading interface */
+@media (max-width: 768px) {
+  .score-summary-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .grading-controls {
+    flex-direction: column;
+  }
+  
+  .grading-controls .btn {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+
+/* Subject Grade Card Styling */
+.subject-grade-card {
+  margin-bottom: 25px;
+  border-left: 4px solid var(--colorPrimary);
+}
+
+.subject-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.subject-title h3 {
+  margin: 0 0 5px 0;
+  color: var(--colorPrimary);
+  font-size: 1.3em;
+}
+
+.subject-stats {
+  color: #666;
+  font-size: 0.9em;
+}
+
+.subject-average {
+  font-size: 1.5em;
+  font-weight: bold;
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: #f8f9fa;
+}
+
+/* Quiz Grade Item Styling */
+.quiz-grade-item {
+  background: #f9f9f9;
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 15px;
+  border-left: 3px solid var(--colorPrimary);
+}
+
+.quiz-header h4 {
+  margin: 0 0 8px 0;
+  color: #333;
+  font-size: 1.1em;
+}
+
+.quiz-meta {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.attempt-count, .best-score, .latest-score {
+  background: #e9ecef;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  color: #495057;
+}
+
+.best-score {
+  background: #d4edda;
+  color: #155724;
+}
+
+.latest-score {
+  background: #cce7ff;
+  color: #004085;
+}
+
+.quiz-scores {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.attempt-score {
+  background: white;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+  text-align: center;
+}
+
+.attempt-score.latest {
+  background: #e7f3ff;
+  border-color: #b8daff;
+  border-width: 2px;
+}
+
+.attempt-number {
+  display: block;
+  font-size: 0.8em;
+  color: #666;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.score {
+  display: block;
+  font-weight: bold;
+  font-size: 1.1em;
+  margin-bottom: 4px;
+}
+
+.attempt-score small {
+  color: #666;
+  font-size: 0.75em;
+}
+
+.attempt-comment {
+  margin-top: 5px;
+  padding-top: 5px;
+  border-top: 1px dashed #ddd;
+  font-size: 0.75em;
+  color: #666;
+  font-style: italic;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .quiz-scores {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  }
+  
+  .quiz-meta {
+    gap: 8px;
+  }
+  
+  .quiz-grade-item {
+    padding: 12px;
+  }
+}
+
+/* ====================================================
    FORUM & DISCUSSION STYLES
    ==================================================== */
 .post {

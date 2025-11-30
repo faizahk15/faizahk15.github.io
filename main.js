@@ -195,6 +195,154 @@ function loadMore() {
   });
 }
 
+// Load newest lessons for student dashboard
+async function loadNewestLessons() {
+  const user = JSON.parse(localStorage.getItem("loggedInUser"));
+  if (!user || user.role !== "student") return;
+
+  const container = document.getElementById("newest-lessons");
+  if (!container) return;
+
+  try {
+    // Fetch all subjects for the student's class
+    const res = await fetch(`${API}/materi/list/${user.class}`);
+    const data = await res.json();
+
+    if (!data.success || data.mapel.length === 0) {
+      container.innerHTML = "<p>Belum ada materi yang tersedia.</p>";
+      return;
+    }
+
+    // Get the first 3 newest materials across all subjects
+    let allMaterials = [];
+
+    // Fetch materials for each subject
+    for (const subject of data.mapel) {
+      const materiRes = await fetch(`${API}/materi/detail/${subject.id_mapel}`);
+      const materiData = await materiRes.json();
+
+      if (materiData.success && materiData.materi.length > 0) {
+        materiData.materi.forEach(material => {
+          allMaterials.push({
+            ...material,
+            subject_name: subject.name
+          });
+        });
+      }
+    }
+
+    // Sort by creation date (newest first) and take first 3
+    allMaterials.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    const newestMaterials = allMaterials.slice(0, 3);
+
+    if (newestMaterials.length === 0) {
+      container.innerHTML = "<p>Belum ada materi yang tersedia.</p>";
+      return;
+    }
+
+    // Display the materials
+    container.innerHTML = `
+      <ul style="list-style: none; padding: 0; margin: 0;">
+        ${newestMaterials.map(material => `
+          <li style="margin-bottom: 10px; padding: 10px; background: var(--colorWhite2); border-radius: 5px;">
+            <strong>${material.subject_name}: ${material.title}</strong>
+            <br>
+            <small style="color: var(--colorAcc);">${material.teacher_name || 'Guru'}</small>
+            ${material.description ? `<br><small>${material.description.substring(0, 50)}${material.description.length > 50 ? '...' : ''}</small>` : ''}
+            ${material.file_url ? `<br><a href="${material.file_url}" target="_blank" class="btn small" style="margin-top: 5px;">Buka Materi</a>` : ''}
+          </li>
+        `).join('')}
+      </ul>
+      ${allMaterials.length > 3 ? `<a href="materi.html" class="btn" style="margin-top: 10px;">Lihat Semua Materi</a>` : ''}
+    `;
+
+  } catch (error) {
+    console.error("Error loading newest lessons:", error);
+    container.innerHTML = "<p>Error memuat materi terbaru.</p>";
+  }
+}
+
+// Load active quizzes for student dashboard
+async function loadActiveQuizzes() {
+  const user = JSON.parse(localStorage.getItem("loggedInUser"));
+  if (!user || user.role !== "student") return;
+
+  const container = document.getElementById("active-quizzes");
+  if (!container) return;
+
+  try {
+    const res = await fetch(`${API}/quiz/student/${user.class}?user_id=${user.id_user}`);
+    const data = await res.json();
+
+    if (!data.success || data.quizzes.length === 0) {
+      container.innerHTML = "<p>Tidak ada kuis aktif saat ini.</p>";
+      return;
+    }
+
+    const now = new Date();
+    const activeQuizzes = data.quizzes.filter(quiz => {
+      const availableFrom = quiz.available_from ? new Date(quiz.available_from) : null;
+      const availableUntil = quiz.available_until ? new Date(quiz.available_until) : null;
+
+      const isAvailable = (!availableFrom || now >= availableFrom) &&
+        (!availableUntil || now <= availableUntil);
+
+      const attemptsMade = quiz.attempts_made || 0;
+      const attemptsLeft = Math.max(0, quiz.max_attempts - attemptsMade);
+
+      return isAvailable && attemptsLeft > 0;
+    }).slice(0, 3); // Show only first 3 active quizzes
+
+    if (activeQuizzes.length === 0) {
+      container.innerHTML = "<p>Tidak ada kuis aktif saat ini.</p>";
+      return;
+    }
+
+    container.innerHTML = `
+      <ul style="list-style: none; padding: 0; margin: 0;">
+        ${activeQuizzes.map(quiz => {
+      const availableFrom = quiz.available_from ? new Date(quiz.available_from).toLocaleDateString('id-ID') : 'Sekarang';
+      const availableUntil = quiz.available_until ? new Date(quiz.available_until).toLocaleDateString('id-ID') : 'Tidak ada batas';
+      const attemptsMade = quiz.attempts_made || 0;
+      const attemptsLeft = Math.max(0, quiz.max_attempts - attemptsMade);
+
+      return `
+            <li style="margin-bottom: 10px; padding: 10px; background: var(--colorWhite2); border-radius: 5px;">
+              <strong>${quiz.title}</strong>
+              <br>
+              <small style="color: var(--colorAcc);">${quiz.subject_name} • ${quiz.time_limit} menit</small>
+              ${quiz.description ? `<br><small>${quiz.description.substring(0, 50)}${quiz.description.length > 50 ? '...' : ''}</small>` : ''}
+              <br>
+              <small><strong>Percobaan:</strong> ${attemptsMade} dikerjakan, ${attemptsLeft} tersisa</small>
+              <br>
+              <small><strong>Periode:</strong> ${availableFrom} - ${availableUntil}</small>
+              <br>
+              <button class="btn small start-quiz" data-id="${quiz.id_quiz}" style="margin-top: 5px;">
+                Mulai Kuis
+              </button>
+            </li>
+          `;
+    }).join('')}
+      </ul>
+      ${data.quizzes.length > 3 ? `<a href="kuis.html" class="btn" style="margin-top: 10px;">Lihat Semua Kuis</a>` : ''}
+    `;
+
+    // Add event listeners for start quiz buttons
+    container.addEventListener('click', function (e) {
+      if (e.target.classList.contains('start-quiz')) {
+        const quizId = e.target.getAttribute('data-id');
+        startQuiz(quizId);
+      }
+    });
+
+  } catch (error) {
+    console.error("Error loading active quizzes:", error);
+    container.innerHTML = "<p>Error memuat kuis aktif.</p>";
+  }
+}
+
+
+
 
 /*
 // Subject pages
@@ -526,7 +674,7 @@ async function loadStudentQuizzes() {
           : `<button class="btn" disabled>${!isAvailable ? 'Belum Tersedia' : 'Tidak Ada Percobaan Lagi'}</button>`}
           
           ${attemptsMade > 0
-          ? `<button class="btn view-results" data-id="${quiz.id_quiz}">Lihat Nilai</button>`
+          ? `<button class="btn view-results" data-id="${quiz.id_quiz}" onclick="viewStudentQuizResults(${quiz.id_quiz})">Lihat Nilai</button>`
           : ''}
         </div>
       `;
@@ -543,10 +691,12 @@ async function loadStudentQuizzes() {
       }
 
       // Handle "Lihat Nilai" button clicks
+      /*
       if (e.target.classList.contains('view-results')) {
         const quizId = e.target.getAttribute('data-id');
         viewStudentQuizResults(quizId);
       }
+        */
     });
 
   } catch (error) {
@@ -586,6 +736,7 @@ async function startQuiz(quizId) {
 
 // View quiz results
 function viewStudentQuizResults(quizId) {
+  console.log("Redirecting to view results for quiz:", quizId); // Debug log
   window.location.href = `kuis-nilai.html?quiz=${quizId}`;
 }
 
@@ -865,8 +1016,9 @@ async function displayQuizResults() {
   }
 }
 
-// Load student's quiz grades
+// Load student grades grouped by subject and individual quizzes
 async function loadStudentGrades() {
+  console.log('loadStudentGrades function called!');
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
   const container = document.getElementById("grades-container");
   const noGrades = document.getElementById("no-grades");
@@ -879,7 +1031,7 @@ async function loadStudentGrades() {
     const res = await fetch(`${API}/quiz/grades/${user.id_user}`);
     const data = await res.json();
 
-    if (!data.success || data.grades.length === 0) {
+    if (!data.success || !data.grades || data.grades.length === 0) {
       container.innerHTML = "";
       noGrades.style.display = "block";
       return;
@@ -888,72 +1040,277 @@ async function loadStudentGrades() {
     container.innerHTML = "";
     noGrades.style.display = "none";
 
-    // Filter by specific quiz if provided
+    // Check if quiz parameter exists in URL
     const params = new URLSearchParams(window.location.search);
-    const filterQuizId = params.get("quiz");
+    const quizId = params.get("quiz");
 
+    // Filter grades by specific quiz if parameter exists
     let filteredGrades = data.grades;
-    if (filterQuizId) {
-      filteredGrades = data.grades.filter(grade => grade.id_quiz == filterQuizId);
-
+    if (quizId) {
+      filteredGrades = data.grades.filter(grade => grade.id_quiz == quizId);
+      
       if (filteredGrades.length === 0) {
         container.innerHTML = `
           <div class="card">
             <h3>Belum Ada Nilai untuk Kuis Ini</h3>
             <p>Anda belum mengerjakan kuis ini atau nilai belum tersedia.</p>
             <a href="kuis.html" class="btn">Kembali ke Daftar Kuis</a>
+            <a href="kuis-nilai.html" class="btn" style="margin-left: 10px;">Lihat Semua Nilai</a>
           </div>
         `;
         return;
       }
     }
 
-    // Group by quiz
-    const gradesByQuiz = {};
+    // Group grades by subject, then by individual quiz
+    const gradesBySubject = {};
+
     filteredGrades.forEach(grade => {
-      if (!gradesByQuiz[grade.id_quiz]) {
-        gradesByQuiz[grade.id_quiz] = {
-          quiz_title: grade.quiz_title,
+      const subjectKey = grade.subject_name;
+      
+      if (!gradesBySubject[subjectKey]) {
+        gradesBySubject[subjectKey] = {
           subject_name: grade.subject_name,
-          attempts: []
+          quizzes: []
         };
       }
-      gradesByQuiz[grade.id_quiz].attempts.push(grade);
+
+      // Find if this quiz already exists in the subject
+      const existingQuiz = gradesBySubject[subjectKey].quizzes.find(
+        quiz => quiz.quiz_id === grade.id_quiz
+      );
+
+      if (existingQuiz) {
+        // Add attempt to existing quiz
+        existingQuiz.attempts.push(grade);
+      } else {
+        // Create new quiz entry
+        gradesBySubject[subjectKey].quizzes.push({
+          quiz_title: grade.quiz_title,
+          quiz_id: grade.id_quiz,
+          attempts: [grade]
+        });
+      }
     });
 
-    // Display grades
-    Object.values(gradesByQuiz).forEach(quizData => {
-      const quizCard = document.createElement("div");
-      quizCard.className = "card grade-card";
+    // Sort attempts within each quiz by attempt number (descending)
+    Object.values(gradesBySubject).forEach(subjectData => {
+      subjectData.quizzes.forEach(quiz => {
+        quiz.attempts.sort((a, b) => b.attempt_number - a.attempt_number);
+      });
+      
+      // Sort quizzes by most recent attempt
+      subjectData.quizzes.sort((a, b) => {
+        const aLatest = new Date(a.attempts[0].submitted_at);
+        const bLatest = new Date(b.attempts[0].submitted_at);
+        return bLatest - aLatest;
+      });
+    });
 
-      quizCard.innerHTML = `
-        <div class="quiz-header">
-          <h3>${quizData.quiz_title}</h3>
-          <span class="subject-badge">${quizData.subject_name}</span>
+    // Display header - different header for filtered view
+    const headerCard = document.createElement("div");
+    headerCard.className = "card";
+    
+    if (quizId) {
+      const quizTitle = filteredGrades[0]?.quiz_title || "Kuis";
+      headerCard.innerHTML = `
+        <div>
+          <h2>📊 Nilai: ${quizTitle}</h2>
+          <a href="kuis-nilai.html" class="btn">Lihat Semua Nilai</a>
         </div>
-        <div class="attempts-list">
-          ${quizData.attempts.map(attempt => `
-            <div class="attempt-item">
-              <div class="attempt-info">
-                <strong>Percobaan ${attempt.attempt_number}</strong>
-                <span class="attempt-date">${new Date(attempt.submitted_at).toLocaleString('id-ID')}</span>
-              </div>
-              <div class="attempt-score">
-                <span class="score">${attempt.score}/${attempt.max_score}</span>
-                <span class="percentage ${getScoreColor(attempt.percentage)}">${attempt.percentage}%</span>
-              </div>
-            </div>
-          `).join('')}
+        <p>Berikut adalah riwayat nilai untuk kuis <strong>${quizTitle}</strong>.</p>
+        <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+          <div style="background: #e8f5e8; padding: 8px 12px; border-radius: 20px; font-size: 0.9em;">
+            <strong>Total Percobaan:</strong> ${filteredGrades.length}
+          </div>
+          <div style="background: #e8f5e8; padding: 8px 12px; border-radius: 20px; font-size: 0.9em;">
+            <strong>Mata Pelajaran:</strong> ${filteredGrades[0]?.subject_name || '-'}
+          </div>
         </div>
       `;
+    } else {
+      headerCard.innerHTML = `
+        <h2>📊 Nilai Semua Kuis</h2>
+        <p>Berikut adalah riwayat nilai semua kuis yang telah Anda kerjakan, dikelompokkan berdasarkan mata pelajaran.</p>
+        <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+          <div style="background: #e8f5e8; padding: 8px 12px; border-radius: 20px; font-size: 0.9em;">
+            <strong>Total Kuis Dikerjakan:</strong> ${Object.values(gradesBySubject).reduce((total, subject) => total + subject.quizzes.length, 0)}
+          </div>
+          <div style="background: #e8f5e8; padding: 8px 12px; border-radius: 20px; font-size: 0.9em;">
+            <strong>Mata Pelajaran:</strong> ${Object.keys(gradesBySubject).length}
+          </div>
+        </div>
+      `;
+    }
+    
+    container.appendChild(headerCard);
 
-      container.appendChild(quizCard);
-    });
+    // If we're viewing a specific quiz, show a simplified view without subject grouping
+    if (quizId) {
+      const quizData = Object.values(gradesBySubject)[0]?.quizzes[0]; // Get the first (and only) quiz
+      if (quizData) {
+        const quizCard = document.createElement("div");
+        quizCard.className = "card";
+        
+        const latestAttempt = quizData.attempts?.[0] || {};
+        const bestAttempt = quizData.attempts?.length > 0 
+          ? [...quizData.attempts].sort((a, b) => (b.percentage || 0) - (a.percentage || 0))[0] 
+          : {};        
+
+        quizCard.innerHTML = `
+          <div class="quiz-header">
+            <h3>${quizData.quiz_title}</h3>
+            <span class="subject-badge">${Object.values(gradesBySubject)[0].subject_name}</span>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0;">
+            <div class="info-card">
+              <strong>Percobaan Terbaik</strong><br>
+              <span style="font-size: 1.5em; font-weight: bold; color: #4CAF50;">${bestAttempt?.percentage || 0}%</span><br>
+              <small>Percobaan #${bestAttempt?.attempt_number || 'N/A'}</small>
+            </div>
+            <div class="info-card">
+              <strong>Percobaan Terakhir</strong><br>
+              <span style="font-size: 1.5em; font-weight: bold;">${latestAttempt?.percentage || 0}%</span><br>
+              <small>Percobaan #${latestAttempt?.attempt_number || 'N/A'}</small>
+            </div>
+            <div class="info-card">
+              <strong>Total Percobaan</strong><br>
+              <span style="font-size: 1.5em; font-weight: bold;">${quizData.attempts?.length || 0}</span>
+            </div>
+          </div>
+          
+          <h4>Riwayat Percobaan:</h4>
+          <div class="attempts-list">
+            ${quizData.attempts.map((attempt, index) => `
+              <div class="attempt-item">
+                <div class="attempt-info">
+                  <strong>Percobaan ${attempt.attempt_number || index + 1}</strong>
+                  <span class="attempt-date">${attempt.submitted_at ? new Date(attempt.submitted_at).toLocaleString('id-ID') : 'Tanggal tidak tersedia'}</span>
+                  ${attempt.teacher_comment ? `
+                    <div style="margin-top: 8px; padding: 8px; background: #f0f8ff; border-radius: 5px; border-left: 3px solid #4CAF50;">
+                      <strong>Komentar Guru:</strong> ${attempt.teacher_comment}
+                    </div>
+                  ` : ''}
+                </div>
+                <div class="attempt-score">
+                  <span class="score">${attempt.score || 0}/${attempt.max_score || 0}</span>
+                  <span class="percentage ${getScoreColorClass(attempt.percentage || 0)}">${attempt.percentage || 0}%</span>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+        
+        container.appendChild(quizCard);
+      }
+    } else {
+      // Display grades by subject (original behavior)
+      Object.values(gradesBySubject).forEach(subjectData => {
+        const subjectCard = document.createElement("div");
+        subjectCard.className = "card subject-grade-card";
+        
+        const totalQuizzes = subjectData.quizzes.length;
+        const totalAttempts = subjectData.quizzes.reduce((total, quiz) => total + quiz.attempts.length, 0);
+        
+        // Calculate average score for this subject
+        const allScores = subjectData.quizzes.flatMap(quiz => 
+          quiz.attempts.map(attempt => parseFloat(attempt.percentage))
+        );
+        const averageScore = allScores.length > 0 
+          ? (allScores.reduce((sum, score) => sum + score, 0) / allScores.length).toFixed(1)
+          : 0;
+
+        subjectCard.innerHTML = `
+          <div class="subject-header">
+            <div class="subject-title">
+              <h3>${getSubjectIcon(subjectData.subject_name)} ${subjectData.subject_name}</h3>
+              <span class="subject-stats">
+                ${totalQuizzes} kuis • ${totalAttempts} percobaan • Rata-rata: ${averageScore}%
+              </span>
+            </div>
+            <div class="subject-average ${getScoreColorClass(averageScore)}">
+              ${averageScore}%
+            </div>
+          </div>
+          
+          <div class="quizzes-list">
+            ${subjectData.quizzes.map(quiz => {
+              const latestAttempt = quiz.attempts[0]; // Most recent attempt (already sorted)
+              const bestAttempt = [...quiz.attempts].sort((a, b) => b.percentage - a.percentage)[0];
+              const attemptCount = quiz.attempts.length;
+              
+              return `
+                <div class="quiz-grade-item">
+                  <div class="quiz-header">
+                    <h4>${quiz.quiz_title}</h4>
+                    <div class="quiz-meta">
+                      <span class="attempt-count">${attemptCount} percobaan</span>
+                      <span class="best-score">Terbaik: ${bestAttempt.percentage}%</span>
+                      <span class="latest-score">Terakhir: ${latestAttempt.percentage}%</span>
+                    </div>
+                    ${latestAttempt.teacher_comment ? `
+                      <div class="teacher-comment">
+                        <strong>Komentar Guru:</strong> ${latestAttempt.teacher_comment}
+                      </div>
+                    ` : ''}
+                  </div>
+                  <div class="quiz-scores">
+                    ${quiz.attempts.map((attempt, index) => `
+                      <div class="attempt-score ${index === 0 ? 'latest' : ''}">
+                        <span class="attempt-number">#${attempt.attempt_number}</span>
+                        <span class="score ${getScoreColorClass(attempt.percentage)}">
+                          ${attempt.percentage}%
+                        </span>
+                        <small>${new Date(attempt.submitted_at).toLocaleDateString('id-ID')}</small>
+                        ${attempt.teacher_comment && index > 0 ? `
+                          <div class="attempt-comment">
+                            <em>${attempt.teacher_comment}</em>
+                          </div>
+                        ` : ''}
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+
+        container.appendChild(subjectCard);
+      });
+    }
 
   } catch (error) {
     console.error("Error loading grades:", error);
-    container.innerHTML = "<p>Error memuat nilai. Silakan refresh halaman.</p>";
+    container.innerHTML = `
+      <div class="card">
+        <h3>Error Memuat Nilai</h3>
+        <p>Terjadi kesalahan saat memuat nilai. Silakan refresh halaman atau coba lagi nanti.</p>
+        <button class="btn" onclick="location.reload()" style="margin-top: 10px;">Refresh Halaman</button>
+      </div>
+    `;
   }
+}
+
+// Helper function to get subject icons
+function getSubjectIcon(subjectName) {
+  const icons = {
+    'Matematika': '🔢',
+    'Ilmu Pengetahuan Alam': '🔬',
+    'Bahasa Indonesia': '📚',
+    'IPA': '🔬'
+  };
+  return icons[subjectName] || '📝';
+}
+
+// Helper function to get score color class
+function getScoreColorClass(percentage) {
+  const perc = parseFloat(percentage);
+  if (perc >= 85) return 'score-excellent';
+  if (perc >= 75) return 'score-good';
+  if (perc >= 65) return 'score-average';
+  return 'score-poor';
 }
 
 // Get color based on score percentage
@@ -1574,7 +1931,7 @@ function addQuestion(questionData = null) {
     </select>
     
     <label>Poin:</label>
-    <input type="number" class="question-points" value="${questionData?.points || 1}" min="1">
+    <input type="number" class="question-points" value="${questionData?.points || 10}" min="1">
     
     <div class="options-container" style="margin-top: 15px; ${questionData?.question_type === 'essay' ? 'display: none;' : ''}">
       <label>Pilihan Jawaban:</label>
@@ -1589,8 +1946,12 @@ function addQuestion(questionData = null) {
 
   container.appendChild(questionDiv);
 
+  // Initialize the question type properly
+  const questionTypeSelect = questionDiv.querySelector('.question-type');
+  toggleQuestionOptions(questionTypeSelect);
+
   // If it's a new multiple choice question (not loaded from data), create 4 default options
-  if (!questionData && questionDiv.querySelector('.question-type').value === 'multiple_choice') {
+  if (!questionData && questionTypeSelect.value === 'multiple_choice') {
     createDefaultOptions(questionDiv);
   }
 }
@@ -1620,13 +1981,13 @@ function createDefaultOptions(questionDiv) {
   });
 }
 
-// Update the renderOptions function to handle default options
+// Update the renderOptions function to handle required attribute
 function renderOptions(options) {
   // If we have existing options from loaded data, render them
   if (options.length > 0) {
     return options.map((option, index) => `
       <div class="option-row">
-        <input type="text" class="option-text" value="${option.option_text}" required>
+        <input type="text" class="option-text" value="${option.option_text}" ${index < 2 ? 'required' : ''}>
         <label style="display: inline-flex; align-items: center; margin-left: 10px;">
           <input type="radio" class="correct-option" name="correct_${Date.now()}" value="${index}" 
             ${option.is_correct ? 'checked' : ''}>
@@ -1639,6 +2000,22 @@ function renderOptions(options) {
 
   // If no options provided (new question), return empty - the createDefaultOptions will handle it
   return '';
+}
+
+// Add this function to prevent form validation on hidden fields
+function setupQuizFormValidation() {
+  const quizForm = document.getElementById("quizForm");
+  if (quizForm) {
+    quizForm.addEventListener('submit', function(e) {
+      // Remove required attribute from hidden option inputs before validation
+      const hiddenOptionInputs = document.querySelectorAll('.options-container[style*="display: none"] .option-text[required]');
+      hiddenOptionInputs.forEach(input => {
+        input.removeAttribute('required');
+      });
+      
+      // The form will now validate normally
+    });
+  }
 }
 
 // Add option to question
@@ -1672,8 +2049,18 @@ function toggleQuestionOptions(select) {
 
   if (select.value === 'essay') {
     optionsContainer.style.display = 'none';
+    // Remove required attribute from option inputs for essay questions
+    const optionInputs = questionCard.querySelectorAll('.option-text');
+    optionInputs.forEach(input => {
+      input.removeAttribute('required');
+    });
   } else {
     optionsContainer.style.display = 'block';
+    // Add required attribute back for multiple choice/true false questions
+    const optionInputs = questionCard.querySelectorAll('.option-text');
+    optionInputs.forEach(input => {
+      input.setAttribute('required', 'required');
+    });
 
     // If it's a new multiple choice question and no options exist yet, create default options
     const optionsList = questionCard.querySelector('.options-list');
@@ -2019,6 +2406,505 @@ async function deletePost(id) {
     alert(data.error);
   }
 }
+
+
+
+// ===== TEACHER QUIZ GRADING =====
+
+// Load quiz attempt for grading
+async function loadQuizAttemptForGrading() {
+  const params = new URLSearchParams(window.location.search);
+  const attemptId = params.get("id");
+
+  if (!attemptId) {
+    window.location.href = "guru-quiz-results.html";
+    return;
+  }
+
+  const container = document.getElementById("attempt-detail");
+  const attemptTitle = document.getElementById("attempt-title");
+  const attemptHeader = document.getElementById("attempt-header");
+
+  if (!container) return;
+
+  try {
+    container.innerHTML = "<p>Memuat detail percobaan...</p>";
+
+    const res = await fetch(`${API}/teacher/quiz/attempt/${attemptId}`);
+    const data = await res.json();
+
+    if (!data.success) {
+      container.innerHTML = `<p>Error: ${data.error}</p>`;
+      return;
+    }
+
+    const attempt = data.attempt;
+    const answers = data.answers;
+
+    // Display attempt header
+    attemptTitle.textContent = `Detail Percobaan: ${attempt.quiz_title}`;
+    attemptHeader.innerHTML = `
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+        <div class="info-card">
+          <strong>Siswa:</strong><br>
+          ${attempt.real_name} (${attempt.class})
+        </div>
+        <div class="info-card">
+          <strong>Percobaan Ke:</strong><br>
+          ${attempt.attempt_number}
+        </div>
+        <div class="info-card">
+          <strong>Skor Otomatis:</strong><br>
+          ${attempt.score}/${attempt.max_score} (${Math.round((attempt.score / attempt.max_score) * 100)}%)
+        </div>
+        <div class="info-card">
+          <strong>Submit:</strong><br>
+          ${new Date(attempt.submitted_at).toLocaleString('id-ID')}
+        </div>
+      </div>
+    `;
+
+    // Display grading form
+    container.innerHTML = `
+      <form id="grading-form">
+        <h3>Penilaian Jawaban (${answers.length} pertanyaan)</h3>
+        <div id="answers-list"></div>
+        
+        <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+          <h4>Ringkasan Nilai</h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin: 10px 0;">
+            <div>
+              <label><strong>Skor Otomatis:</strong></label>
+              <input type="number" id="auto-score" value="${attempt.score}" readonly style="width: 100%; padding: 5px;">
+            </div>
+            <div>
+              <label><strong>Skor Manual (Essay):</strong></label>
+              <input type="number" id="manual-score" value="0" min="0" max="${attempt.max_score - attempt.score}" 
+                     style="width: 100%; padding: 5px;" onchange="updateTotalScore()">
+            </div>
+            <div>
+              <label><strong>Total Skor:</strong></label>
+              <input type="number" id="total-score" value="${attempt.score}" readonly 
+                     style="width: 100%; padding: 5px; font-weight: bold; background: #e8f5e8;">
+            </div>
+            <div>
+              <label><strong>Nilai Akhir:</strong></label>
+              <input type="text" id="final-grade" value="${Math.round((attempt.score / attempt.max_score) * 100)}%" 
+                     readonly style="width: 100%; padding: 5px; font-weight: bold;">
+            </div>
+          </div>
+          
+          <div style="margin-top: 15px;">
+            <label><strong>Komentar untuk Siswa (Opsional):</strong></label>
+            <textarea id="teacher-comment" rows="3" placeholder="Berikan komentar atau masukan untuk siswa..." 
+                      style="width: 100%; padding: 8px; margin-top: 5px;"></textarea>
+          </div>
+          
+          <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+            <button type="button" class="btn" onclick="submitGrading(${attemptId})">
+              💾 Simpan Nilai
+            </button>
+            <button type="button" class="btn" onclick="useAutoScore()">
+              ✅ Gunakan Skor Otomatis
+            </button>
+            <button type="button" class="btn cancel" onclick="window.history.back()">
+              ↩️ Kembali
+            </button>
+          </div>
+        </div>
+      </form>
+      <div id="grading-status" style="margin-top: 15px;"></div>
+    `;
+
+    const answersList = document.getElementById("answers-list");
+
+    if (answers.length === 0) {
+      answersList.innerHTML = "<p>Tidak ada jawaban yang tersimpan.</p>";
+      return;
+    }
+
+    // Display each answer for grading
+    answers.forEach((answer, index) => {
+      const answerCard = document.createElement("div");
+      answerCard.className = "answer-card";
+      answerCard.style.border = "1px solid #ddd";
+      answerCard.style.borderRadius = "8px";
+      answerCard.style.padding = "15px";
+      answerCard.style.marginBottom = "15px";
+      answerCard.style.backgroundColor = answer.points_earned > 0 ? "#f8fff8" : "#fff8f8";
+
+      let answerHtml = `
+        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+          <h4 style="margin: 0; flex: 1;">Pertanyaan ${index + 1}</h4>
+          <div style="text-align: right;">
+            <span style="color: ${answer.points_earned > 0 ? 'green' : 'red'}; font-weight: bold;">
+              ${answer.points_earned > 0 ? '✓ Benar' : '✗ Salah'}
+            </span>
+            <br>
+            <small>${answer.points_earned}/${answer.max_points} poin</small>
+          </div>
+        </div>
+        <p><strong>Pertanyaan:</strong> ${answer.question_text}</p>
+        <p><strong>Tipe:</strong> ${answer.question_type}</p>
+      `;
+
+      if (answer.question_type === 'essay') {
+        answerHtml += `
+          <div style="margin: 10px 0;">
+            <label><strong>Jawaban Essay Siswa:</strong></label>
+            <div style="background: #f5f5f5; padding: 10px; border-radius: 5px; margin: 5px 0; min-height: 80px;">
+              ${answer.answer_text || '<em style="color: #888;">Tidak ada jawaban</em>'}
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+            <label><strong>Penilaian Manual:</strong></label>
+            <input type="number" class="essay-points" data-question-id="${answer.id_question}" 
+                   value="0" min="0" max="${answer.max_points}" 
+                   style="width: 80px; padding: 5px;" onchange="updateManualScore()">
+            <span>/ ${answer.max_points} poin</span>
+          </div>
+          <div style="margin-top: 8px;">
+            <label><strong>Komentar (Opsional):</strong></label>
+            <input type="text" class="essay-comment" data-question-id="${answer.id_question}" 
+                   placeholder="Komentar untuk jawaban ini..." 
+                   style="width: 100%; padding: 5px; margin-top: 5px;">
+          </div>
+        `;
+      } else {
+        answerHtml += `
+          <p><strong>Jawaban Dipilih:</strong> 
+            <span style="color: ${answer.points_earned > 0 ? 'green' : 'red'};">
+              ${answer.selected_option_text || '<em>Tidak ada pilihan</em>'}
+            </span>
+          </p>
+        `;
+
+        if (answer.correct_option_text) {
+          answerHtml += `
+            <p><strong>Jawaban Benar:</strong> 
+              <span style="color: green;">${answer.correct_option_text}</span>
+            </p>
+          `;
+        }
+
+        answerHtml += `<p><em>Nilai untuk pertanyaan ini sudah otomatis.</em></p>`;
+      }
+
+      answerCard.innerHTML = answerHtml;
+      answersList.appendChild(answerCard);
+    });
+
+  } catch (error) {
+    console.error("Error loading attempt for grading:", error);
+    container.innerHTML = "<p>Error memuat detail percobaan.</p>";
+  }
+}
+
+// Update manual score calculation
+function updateManualScore() {
+  const essayInputs = document.querySelectorAll('.essay-points');
+  let manualScore = 0;
+
+  essayInputs.forEach(input => {
+    manualScore += parseInt(input.value) || 0;
+  });
+
+  document.getElementById('manual-score').value = manualScore;
+  updateTotalScore();
+}
+
+// Update total score display
+function updateTotalScore() {
+  const autoScore = parseInt(document.getElementById('auto-score').value) || 0;
+  const manualScore = parseInt(document.getElementById('manual-score').value) || 0;
+  const totalScore = autoScore + manualScore;
+
+  document.getElementById('total-score').value = totalScore;
+
+  // Calculate percentage
+  const maxScoreElement = document.querySelector('.info-card:nth-child(3)');
+  const maxScoreText = maxScoreElement ? maxScoreElement.textContent.split('/')[1] : '100';
+  const maxScore = parseInt(maxScoreText) || 100;
+  const percentage = Math.round((totalScore / maxScore) * 100);
+
+  document.getElementById('final-grade').value = `${percentage}%`;
+}
+
+// Use auto score only
+function useAutoScore() {
+  const essayInputs = document.querySelectorAll('.essay-points');
+  essayInputs.forEach(input => {
+    input.value = 0;
+  });
+
+  document.getElementById('manual-score').value = 0;
+  document.getElementById('teacher-comment').value = '';
+
+  const commentInputs = document.querySelectorAll('.essay-comment');
+  commentInputs.forEach(input => {
+    input.value = '';
+  });
+
+  updateTotalScore();
+}
+
+// Submit grading to server
+async function submitGrading(attemptId) {
+  const totalScore = parseInt(document.getElementById('total-score').value) || 0;
+  const teacherComment = document.getElementById('teacher-comment').value;
+  const statusDiv = document.getElementById('grading-status');
+
+  // Collect essay grades and comments
+  const essayGrades = [];
+  const essayPointsInputs = document.querySelectorAll('.essay-points');
+  const essayCommentInputs = document.querySelectorAll('.essay-comment');
+
+  essayPointsInputs.forEach(input => {
+    const points = parseInt(input.value) || 0;
+    if (points > 0) {
+      const questionId = input.dataset.questionId;
+      const commentInput = Array.from(essayCommentInputs).find(
+        c => c.dataset.questionId === questionId
+      );
+      const comment = commentInput ? commentInput.value : '';
+
+      essayGrades.push({
+        id_question: questionId,
+        points_earned: points,
+        teacher_comment: comment
+      });
+    }
+  });
+
+  try {
+    statusDiv.innerHTML = '<p style="color: blue;">Menyimpan nilai...</p>';
+
+    const res = await fetch(`${API}/teacher/quiz/grade`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id_attempt: attemptId,
+        final_score: totalScore,
+        teacher_comment: teacherComment,
+        essay_grades: essayGrades
+      })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      statusDiv.innerHTML = '<p style="color: green;">✅ Nilai berhasil disimpan!</p>';
+      setTimeout(() => {
+        window.history.back();
+      }, 1500);
+    } else {
+      statusDiv.innerHTML = `<p style="color: red;">❌ Gagal menyimpan: ${data.error}</p>`;
+    }
+  } catch (error) {
+    console.error("Error submitting grade:", error);
+    statusDiv.innerHTML = '<p style="color: red;">❌ Error menyimpan nilai</p>';
+  }
+}
+
+// ===== STUDENT QUIZ RESULTS VIEW =====
+
+// Enhanced function to load student's quiz grades with detailed view
+/*
+async function loadStudentGrades() {
+  const user = JSON.parse(localStorage.getItem("loggedInUser"));
+  const container = document.getElementById("grades-container");
+  const noGrades = document.getElementById("no-grades");
+
+  if (!container) return;
+
+  try {
+    container.innerHTML = "<p>Memuat nilai...</p>";
+
+    const res = await fetch(`${API}/quiz/grades/${user.id_user}`);
+    const data = await res.json();
+
+    if (!data.success || data.grades.length === 0) {
+      container.innerHTML = "";
+      noGrades.style.display = "block";
+      return;
+    }
+
+    container.innerHTML = "";
+    noGrades.style.display = "none";
+
+    // Filter by specific quiz if provided
+    const params = new URLSearchParams(window.location.search);
+    const filterQuizId = params.get("quiz");
+
+    let filteredGrades = data.grades;
+    if (filterQuizId) {
+      filteredGrades = data.grades.filter(grade => grade.id_quiz == filterQuizId);
+
+      if (filteredGrades.length === 0) {
+        container.innerHTML = `
+          <div class="card">
+            <h3>Belum Ada Nilai untuk Kuis Ini</h3>
+            <p>Anda belum mengerjakan kuis ini atau nilai belum tersedia.</p>
+            <a href="kuis.html" class="btn">Kembali ke Daftar Kuis</a>
+          </div>
+        `;
+        return;
+      }
+    }
+
+    // Group by quiz
+    const gradesByQuiz = {};
+    filteredGrades.forEach(grade => {
+      if (!gradesByQuiz[grade.id_quiz]) {
+        gradesByQuiz[grade.id_quiz] = {
+          quiz_title: grade.quiz_title,
+          subject_name: grade.subject_name,
+          attempts: []
+        };
+      }
+      gradesByQuiz[grade.id_quiz].attempts.push(grade);
+    });
+
+    // Display grades
+    Object.values(gradesByQuiz).forEach(quizData => {
+      const quizCard = document.createElement("div");
+      quizCard.className = "card grade-card";
+
+      quizCard.innerHTML = `
+        <div class="quiz-header">
+          <h3>${quizData.quiz_title}</h3>
+          <span class="subject-badge">${quizData.subject_name}</span>
+        </div>
+        <div class="attempts-list">
+          ${quizData.attempts.map(attempt => `
+            <div class="attempt-item">
+              <div class="attempt-info">
+                <strong>Percobaan ${attempt.attempt_number}</strong>
+                <span class="attempt-date">${new Date(attempt.submitted_at).toLocaleString('id-ID')}</span>
+                ${attempt.teacher_comment ? `
+                  <div style="margin-top: 8px; padding: 8px; background: #f0f8ff; border-radius: 5px; border-left: 3px solid #4CAF50;">
+                    <strong>Komentar Guru:</strong> ${attempt.teacher_comment}
+                  </div>
+                ` : ''}
+              </div>
+              <div class="attempt-score">
+                <span class="score">${attempt.score}/${attempt.max_score}</span>
+                <span class="percentage ${getScoreColor(attempt.percentage)}">${attempt.percentage}%</span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+        ${quizData.attempts.some(attempt => attempt.essay_grades && attempt.essay_grades.length > 0) ? `
+          <div style="margin-top: 15px;">
+            <button class="btn small" onclick="viewDetailedResults(${quizData.attempts[0].id_quiz})">
+              📊 Lihat Detail Penilaian
+            </button>
+          </div>
+        ` : ''}
+      `;
+
+      container.appendChild(quizCard);
+    });
+
+  } catch (error) {
+    console.error("Error loading grades:", error);
+    container.innerHTML = "<p>Error memuat nilai. Silakan refresh halaman.</p>";
+  }
+}
+  */
+
+// View detailed essay results for a specific quiz
+async function viewDetailedResults(quizId) {
+  const user = JSON.parse(localStorage.getItem("loggedInUser"));
+
+  try {
+    // Fetch detailed results for this quiz
+    const res = await fetch(`${API}/quiz/detailed-results/${quizId}?user_id=${user.id_user}`);
+    const data = await res.json();
+
+    if (data.success) {
+      // Create a modal or new page to show detailed results
+      showDetailedResultsModal(data.detailedResults);
+    } else {
+      alert("Tidak dapat memuat detail penilaian: " + data.error);
+    }
+  } catch (error) {
+    console.error("Error loading detailed results:", error);
+    alert("Error memuat detail penilaian");
+  }
+}
+
+// Show modal with detailed essay results
+function showDetailedResultsModal(detailedResults) {
+  // Create modal element
+  const modal = document.createElement("div");
+  modal.className = "modal";
+  modal.style.display = "flex";
+
+  modal.innerHTML = `
+    <div class="modal-box" style="max-width: 600px; max-height: 80vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 20px;">
+        <h2>📝 Detail Penilaian Essay</h2>
+        <button class="btn small danger" onclick="this.closest('.modal').remove()">✕ Tutup</button>
+      </div>
+      
+      ${detailedResults.map(attempt => `
+        <div class="card" style="margin-bottom: 15px;">
+          <h3>Percobaan ${attempt.attempt_number} - ${new Date(attempt.submitted_at).toLocaleString('id-ID')}</h3>
+          
+          ${attempt.essay_answers && attempt.essay_answers.length > 0 ? `
+            <div style="margin-top: 15px;">
+              <h4>Jawaban Essay:</h4>
+              ${attempt.essay_answers.map((essay, index) => `
+                <div class="essay-answer" style="border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 8px;">
+                  <h5>Pertanyaan ${index + 1}:</h5>
+                  <p><strong>Pertanyaan:</strong> ${essay.question_text}</p>
+                  <div style="background: #f5f5f5; padding: 10px; border-radius: 5px; margin: 10px 0;">
+                    <strong>Jawaban Anda:</strong><br>
+                    ${essay.answer_text || '<em>Tidak ada jawaban</em>'}
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                      <strong>Nilai:</strong> ${essay.points_earned}/${essay.max_points} poin
+                    </div>
+                    ${essay.teacher_comment ? `
+                      <div style="color: #666; font-style: italic;">
+                        "${essay.teacher_comment}"
+                      </div>
+                    ` : ''}
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          ` : `
+            <p style="color: #666; text-align: center;">Tidak ada pertanyaan essay dalam kuis ini.</p>
+          `}
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  // Close modal when clicking outside
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.remove();
+    }
+  });
+}
+
+// Enhanced function to get color based on score percentage
+function getScoreColor(percentage) {
+  if (percentage >= 90) return "score-excellent";
+  if (percentage >= 80) return "score-excellent";
+  if (percentage >= 70) return "score-good";
+  if (percentage >= 60) return "score-average";
+  return "score-poor";
+}
+
+
+
 
 /* -----------------------------------------------------
    FORUM POST PAGE HANDLER
@@ -3003,6 +3889,7 @@ document.addEventListener('DOMContentLoaded', () => {
   applyRoleUI();
   loadMore();
   const path = window.location.pathname;
+  console.log(path);
 
   if (path.endsWith('dashboard.html')) {
     const user = JSON.parse(localStorage.getItem("loggedInUser"));
@@ -3012,6 +3899,8 @@ document.addEventListener('DOMContentLoaded', () => {
       showTeacherClassAndMapel();
     } else {
       generateLeaderboard();
+      loadNewestLessons();
+      loadActiveQuizzes();
     }
   }
 
@@ -3094,6 +3983,7 @@ document.addEventListener('DOMContentLoaded', () => {
   else if (path.endsWith('guru-quiz-create.html')) {
     showTeacherClassAndMapel();
     setupQuizEditorForm(); // Replace the old function
+    setupQuizFormValidation();
 
     // Check if we're editing an existing quiz or creating new
     const params = new URLSearchParams(window.location.search);
@@ -3123,6 +4013,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   else if (path.endsWith('guru-quiz-attempt.html')) {
     loadQuizAttemptDetail();
+    loadQuizAttemptForGrading();
   }
   else initLogin();
 });
