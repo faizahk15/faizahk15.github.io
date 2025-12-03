@@ -143,7 +143,7 @@ async function loadNewestLessons() {
           </li>
         `).join('')}
       </ul>
-      ${allMaterials.length > 3 ? `<a href="materi.html" class="btn" style="margin-top: 10px;">Lihat Semua Materi</a>` : ''}
+      ${allMaterials.length > 0 ? `<a href="materi.html" class="btn" style="margin-top: 10px;">Lihat Semua Materi</a>` : ''}
     `;
 
   } catch (error) {
@@ -207,14 +207,11 @@ async function loadActiveQuizzes() {
               <br>
               <small><strong>Periode:</strong> ${availableFrom} - ${availableUntil}</small>
               <br>
-              <button class="btn small start-quiz" data-id="${quiz.id_quiz}" style="margin-top: 5px;">
-                Mulai Kuis
-              </button>
             </li>
           `;
     }).join('')}
       </ul>
-      ${data.quizzes.length > 3 ? `<a href="kuis.html" class="btn" style="margin-top: 10px;">Lihat Semua Kuis</a>` : ''}
+      ${data.quizzes.length > 0 ? `<a href="kuis.html" class="btn" style="margin-top: 10px;">Lihat Semua Kuis</a>` : ''}
     `;
 
     // Add event listeners for start quiz buttons
