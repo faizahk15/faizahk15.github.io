@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Admin - Kelola Materi</title>
+    <script>
+        const user = JSON.parse(localStorage.getItem("loggedInUser"));
+        if (!user || user.role !== "admin") {
+            window.location.href = "dashboard.html";
+        }
+    </script>
+</head>
+
+<body>
+    <header class="headerBox">
+        <button id="menu-toggle" class="menu-toggle">☰</button>
+        <div class="headerSpacer"></div>
+        <div class="headerTitle">
+            <h1>Admin - Kelola Materi</h1>
+            <p id="welcome-msg"></p>
+        </div>
+        <div class="headerProfile">
+            <img src="assets/profile.png" class="thumb" id="header-profile-pic" style="border-radius: 50%;">
+        </div>
+    </header>
+
+    <nav id="nav-bar">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="admin-users.html">Kelola Pengguna</a>
+        <a href="admin-materi.html" class="select">Kelola Materi</a>
+        <a href="forum-admin.html">Kelola Forum</a>
+        <a href="profil.html">Profil</a>
+    </nav>
+
+    <div class="container">
+        <div class="card">
+            <h2>📚 Kelola Semua Materi</h2>
+            <p>Admin dapat melihat, mengedit, dan menghapus semua materi yang dibuat oleh guru.</p>
+
+            <div class="filters" style="margin-bottom: 20px; display: flex; gap: 15px; flex-wrap: wrap;">
+                <div>
+                    <label for="filterClass">Filter Kelas:</label>
+                    <select id="filterClass" onchange="loadMaterials()">
+                        <option value="">Semua Kelas</option>
+                        <option value="7">Kelas 7</option>
+                        <option value="8">Kelas 8</option>
+                        <option value="9">Kelas 9</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="filterSubject">Filter Mapel:</label>
+                    <select id="filterSubject" onchange="loadMaterials()">
+                        <option value="">Semua Mapel</option>
+                        <!-- Will be populated by JavaScript -->
+                    </select>
+                </div>
+
+                <div>
+                    <label for="searchMaterial">Cari:</label>
+                    <input type="text" id="searchMaterial" placeholder="Cari judul materi..."
+                        oninput="debouncedSearch()">
+                </div>
+
+                <div style="align-self: flex-end;">
+                    <button class="btn small" onclick="loadMaterials()">↻ Refresh</button>
+                </div>
+            </div>
+
+            <div class="table-wrapper">
+                <table id="materialsTable">
+                    <thead>
+                        <tr>
+                            <th>Judul</th>
+                            <th>Deskripsi</th>
+                            <th>Mapel</th>
+                            <th>Kelas</th>
+                            <th>Guru</th>
+                            <th>Tanggal Dibuat</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="materialsBody">
+                        <tr>
+                            <td colspan="7">Memuat data...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="pagination" style="margin-top: 15px; text-align: center;"></div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal hidden">
+        <div class="modal-box" style="max-width: 600px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>✏️ Edit Materi</h2>
+                <button class="btn small danger" onclick="closeEditModal()">✕ Tutup</button>
+            </div>
+
+            <form id="editMaterialForm">
+                <input type="hidden" id="editId">
+
+                <div class="form-group">
+                    <label for="editTitle">Judul:</label>
+                    <input type="text" id="editTitle" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="editDescription">Deskripsi:</label>
+                    <textarea id="editDescription" rows="3"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="editFileUrl">URL File:</label>
+                    <input type="text" id="editFileUrl" placeholder="https://...">
+                </div>
+
+                <div class="form-group">
+                    <label for="editSortOrder">Urutan:</label>
+                    <input type="number" id="editSortOrder" min="0" value="0">
+                </div>
+
+                <div class="form-group">
+                    <label for="editVisibleClass">Tampilkan untuk Kelas:</label>
+                    <select id="editVisibleClass">
+                        <option value="7A">7A</option>
+                        <option value="7B">7B</option>
+                        <option value="7C">7C</option>
+                        <option value="8A">8A</option>
+                        <option value="8B">8B</option>
+                        <option value="8C">8C</option>
+                        <option value="9A">9A</option>
+                        <option value="9B">9B</option>
+                        <option value="9C">9C</option>
+                    </select>
+                </div>
+
+                <div id="editStatus" style="margin: 15px 0;"></div>
+
+                <div style="display: flex; gap: 10px;">
+                    <button type="submit" class="btn">💾 Simpan Perubahan</button>
+                    <button type="button" class="btn cancel" onclick="closeEditModal()">Batal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal hidden">
+        <div class="modal-box" style="max-width: 500px;">
+            <h2>🗑️ Hapus Materi</h2>
+            <p id="deleteModalText">Apakah Anda yakin ingin menghapus materi ini?</p>
+
+            <div id="deleteStatus" style="margin: 15px 0;"></div>
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button id="confirmDelete" class="btn danger">Ya, Hapus</button>
+                <button id="cancelDelete" class="btn">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        &copy; 2025 E-Learning SMP | Dikembangkan oleh Tim
+    </footer>
+
+    <script src="main-login.js"></script>
+    <script src="main-profile.js"></script>
+    <script src="main-admin.js"></script>
+    <script src="main-admin-materi.js"></script>
+</body>
+
+</html>

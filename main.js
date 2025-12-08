@@ -130,5 +130,9 @@ document.addEventListener('DOMContentLoaded', () => {
     loadQuizAttemptDetail();
     loadQuizAttemptForGrading();
   }
+  else if (path.endsWith('admin-materi.html')) {
+    // This will be handled by main-admin-materi.js
+    // The page will initialize itself
+  }
   else initLogin();
 });

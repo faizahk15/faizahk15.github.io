@@ -50,8 +50,10 @@
       </div>
       <div class="card subject">
         <div class="content">
-          <h2>Profil Siswa</h2>
+          <h2 id="profile-title">Profil</h2>
           <p id="profile-info"></p>
+          <div id="role-specific-info"></div>
+          <br>
           <a href="#editprofile" class="btn">Edit Foto Profil</a>
         </div>
       </div>
@@ -74,13 +76,44 @@
     // Update profile UI and load profile picture
     document.addEventListener("DOMContentLoaded", async () => {
       const box = document.getElementById("profile-info");
+      const profileTitle = document.getElementById("profile-title");
+      const roleSpecificInfo = document.getElementById("role-specific-info");
       const profileImg = document.getElementById("profile-picture");
 
+      // Set profile title based on role
+      if (user.role === 'student') {
+        profileTitle.textContent = 'Profil Siswa';
+      } else if (user.role === 'teacher') {
+        profileTitle.textContent = 'Profil Guru';
+      } else if (user.role === 'admin') {
+        profileTitle.textContent = 'Profil Admin';
+      }
+
+      // Common profile information
       box.innerHTML = `
-    <b>Nama:</b> ${user.real_name}<br>
-    <b>NISN:</b> ${user.username}<br>
-    <b>Kelas:</b> ${user.class}
+    <b>Nama:</b> ${user.real_name || user.name || 'N/A'}<br>
+    <b>Username:</b> ${user.username}<br>
   `;
+
+      // Role-specific information
+      let roleInfo = '';
+      if (user.role === 'student') {
+        roleInfo = `<b>Kelas:</b> ${user.class || 'N/A'}<br>`;
+        roleInfo += `<b>NISN:</b> ${user.nisn || user.username}<br>`;
+      } else if (user.role === 'teacher') {
+        roleInfo = `<b>Kelas Ampuan:</b> ${user.class || 'N/A'}<br>`;
+      } else if (user.role === 'admin') {
+        roleInfo = `<b>Jabatan:</b> Administrator<br>`;
+        roleInfo += `<b>Hak Akses:</b> Full System Access<br>`;
+      }
+
+      // Add role-specific info to the page
+      if (roleSpecificInfo) {
+        roleSpecificInfo.innerHTML = roleInfo;
+      } else {
+        // Fallback - append to profile info if separate div doesn't exist
+        box.innerHTML += roleInfo;
+      }
 
       // Load profile picture
       await loadProfilePicture(user.id_user, profileImg);

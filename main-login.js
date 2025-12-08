@@ -35,13 +35,14 @@ function applyRoleUI() {
     }
 
     if (role === "admin") {
-      nav.innerHTML = `
-        <a href="dashboard.html">Dashboard</a>
-        <a href="admin-users.html">Kelola Pengguna</a>
-        <a href="forum-admin.html">Kelola Forum</a>
-        <a href="profil.html">Profil</a>
-      `;
-    }
+  nav.innerHTML = `
+    <a href="dashboard.html">Dashboard</a>
+    <a href="admin-users.html">Kelola Pengguna</a>
+    <a href="admin-materi.html">Kelola Materi</a>
+    <a href="forum-admin.html">Kelola Forum</a>
+    <a href="profil.html">Profil</a>
+  `;
+}
   }
 
   // Hide student-only elements for teachers/admin
